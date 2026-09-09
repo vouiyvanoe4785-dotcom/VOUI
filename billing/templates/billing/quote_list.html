@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load ayden_extras %}
+{% block title %}Devis & Proformas - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-file-earmark-text"></i> Devis &amp; Proformas</h3>
+  <a href="{% url 'billing:quote_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouveau devis</a>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Référence</th><th>Type</th><th>Client</th><th>Dossier</th><th>Statut</th><th>Date</th><th>Montant</th></tr></thead>
+      <tbody>
+        {% for q in quotes %}
+        <tr>
+          <td><a href="{% url 'billing:quote_detail' q.pk %}">{{ q.reference }}</a></td>
+          <td>{{ q.get_type_devis_display }}</td>
+          <td>{{ q.client }}</td>
+          <td>{% if q.dossier %}<a href="{% url 'dossiers:detail' q.dossier.pk %}">{{ q.dossier.reference }}</a>{% else %}-{% endif %}</td>
+          <td><span class="badge bg-{{ q.statut|status_color }}">{{ q.get_statut_display }}</span></td>
+          <td>{{ q.date_creation }}</td>
+          <td>{{ q.montant_total|floatformat:2 }} MAD</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Aucun devis enregistré.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "core/_pagination.html" %}
+{% endblock %}

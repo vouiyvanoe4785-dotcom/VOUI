@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Modifier devis{% else %}Nouveau devis{% endif %} - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-file-earmark-text"></i> {% if object %}Modifier le devis {{ object.reference }}{% else %}Nouveau devis / proforma{% endif %}</h3>
+  <a href="{% if object %}{% url 'billing:quote_detail' object.pk %}{% else %}{% url 'billing:quote_list' %}{% endif %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+</div>
+<form method="post">
+  {% csrf_token %}
+  <div class="card mb-3">
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">{{ form.type_devis.label }}</label>
+          {{ form.type_devis }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.client.label }}</label>
+          {{ form.client }}
+          {% if form.client.errors %}<div class="text-danger small">{{ form.client.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.dossier.label }}</label>
+          {{ form.dossier }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.statut.label }}</label>
+          {{ form.statut }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.date_validite.label }}</label>
+          {{ form.date_validite }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">{{ form.notes.label }}</label>
+          {{ form.notes }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body p-4">
+      <h6 class="section-title mb-3">Lignes du devis</h6>
+      {{ formset.management_form }}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="lines-table">
+          <thead><tr><th>Type de frais</th><th>Désignation</th><th style="width:110px;">Quantité</th><th style="width:140px;">Prix unitaire</th><th style="width:60px;"></th></tr></thead>
+          <tbody>
+            {% for line_form in formset %}
+            <tr>
+              <td>{{ line_form.type_frais }}{{ line_form.id }}</td>
+              <td>{{ line_form.designation }}{% if line_form.errors %}<div class="text-danger small">{{ line_form.errors }}</div>{% endif %}</td>
+              <td>{{ line_form.quantite }}</td>
+              <td>{{ line_form.prix_unitaire }}</td>
+              <td class="text-center">{% if line_form.instance.pk %}{{ line_form.DELETE }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if formset.non_form_errors %}<div class="text-danger small">{{ formset.non_form_errors }}</div>{% endif %}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer le devis</button>
+</form>
+{% endblock %}

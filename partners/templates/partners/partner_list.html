@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Clients & Tiers - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-people"></i> Clients &amp; Tiers</h3>
+  <a href="{% url 'partners:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouveau tiers</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-12 col-md-5">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher (raison sociale, ICE, email, téléphone)">
+  </div>
+  <div class="col-8 col-md-3">
+    <select name="type" class="form-select">
+      <option value="">Tous les types</option>
+      {% for value, label in types %}
+      <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-4 col-md-2">
+    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Raison sociale</th><th>Type</th><th>ICE</th><th>Contact</th><th>Téléphone</th><th>Ville</th><th>Statut</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in partners %}
+        <tr>
+          <td><a href="{% url 'partners:detail' p.pk %}">{{ p.raison_sociale }}</a></td>
+          <td>{{ p.get_type_tiers_display }}</td>
+          <td>{{ p.ice|default:"-" }}</td>
+          <td>{{ p.contact_principal|default:"-" }}</td>
+          <td>{{ p.telephone|default:"-" }}</td>
+          <td>{{ p.ville|default:"-" }}</td>
+          <td>{% if p.is_active %}<span class="badge bg-success">Actif</span>{% else %}<span class="badge bg-secondary">Inactif</span>{% endif %}</td>
+          <td class="text-end">
+            <a href="{% url 'partners:update' p.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted py-4">Aucun client / tiers enregistré.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "core/_pagination.html" %}
+{% endblock %}

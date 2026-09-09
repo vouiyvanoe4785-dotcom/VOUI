@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Modifier{% else %}Nouveau{% endif %} dossier - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-folder-plus"></i> {% if object %}Modifier le dossier {{ object.reference }}{% else %}Nouveau dossier de transit{% endif %}</h3>
+  <a href="{% if object %}{% url 'dossiers:detail' object.pk %}{% else %}{% url 'dossiers:list' %}{% endif %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+</div>
+<div class="card">
+  <div class="card-body p-4">
+    <form method="post">
+      {% csrf_token %}
+
+      <h6 class="section-title">Identification</h6>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label">{{ form.client.label }}</label>
+          {{ form.client }}
+          {% if form.client.errors %}<div class="text-danger small">{{ form.client.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ form.reference_client.label }}</label>
+          {{ form.reference_client }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ form.donneur_ordre.label }}</label>
+          {{ form.donneur_ordre }}
+        </div>
+      </div>
+
+      <h6 class="section-title">Opération douanière</h6>
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <label class="form-label">{{ form.type_operation.label }}</label>
+          {{ form.type_operation }}
+          {% if form.type_operation.errors %}<div class="text-danger small">{{ form.type_operation.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.regime_douanier.label }}</label>
+          {{ form.regime_douanier }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.incoterm.label }}</label>
+          {{ form.incoterm }}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ form.agent_responsable.label }}</label>
+          {{ form.agent_responsable }}
+        </div>
+      </div>
+
+      <h6 class="section-title">Origine &amp; destination</h6>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label">{{ form.origine.label }}</label>
+          {{ form.origine }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ form.provenance.label }}</label>
+          {{ form.provenance }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ form.destination.label }}</label>
+          {{ form.destination }}
+        </div>
+      </div>
+
+      <h6 class="section-title">Suivi</h6>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <label class="form-label">{{ form.statut.label }}</label>
+          {{ form.statut }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">{{ form.date_cloture.label }}</label>
+          {{ form.date_cloture }}
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ form.notes.label }}</label>
+        {{ form.notes }}
+      </div>
+
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Enregistrer</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

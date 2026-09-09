@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load ayden_extras %}
+{% block title %}{{ quote.reference }} - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-file-earmark-text"></i> {{ quote.reference }}
+    <span class="badge bg-{{ quote.statut|status_color }}">{{ quote.get_statut_display }}</span>
+  </h3>
+  <div>
+    <a href="{% url 'billing:quote_update' quote.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
+    <a href="{% url 'billing:quote_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card"><div class="card-body py-3"><div class="text-muted small">Client</div><div class="fw-semibold">{{ quote.client }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body py-3"><div class="text-muted small">Dossier</div><div class="fw-semibold">{% if quote.dossier %}<a href="{% url 'dossiers:detail' quote.dossier.pk %}">{{ quote.dossier.reference }}</a>{% else %}-{% endif %}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body py-3"><div class="text-muted small">Créé le</div><div class="fw-semibold">{{ quote.date_creation }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body py-3"><div class="text-muted small">Valide jusqu'au</div><div class="fw-semibold">{{ quote.date_validite|default:"-" }}</div></div></div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Type de frais</th><th>Désignation</th><th>Quantité</th><th>Prix unitaire</th><th class="text-end">Montant</th></tr></thead>
+      <tbody>
+        {% for line in quote.lignes.all %}
+        <tr>
+          <td>{{ line.get_type_frais_display }}</td>
+          <td>{{ line.designation }}</td>
+          <td>{{ line.quantite }}</td>
+          <td>{{ line.prix_unitaire }}</td>
+          <td class="text-end">{{ line.montant|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-3">Aucune ligne.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="table-light"><th colspan="4" class="text-end">Total</th><th class="text-end">{{ quote.montant_total|floatformat:2 }} MAD</th></tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+{% if quote.notes %}
+<div class="card"><div class="card-body">{{ quote.notes|linebreaks }}</div></div>
+{% endif %}
+{% endblock %}

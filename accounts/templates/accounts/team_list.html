@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Équipe - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-person-badge"></i> Équipe &amp; utilisateurs</h3>
+  <a href="{% url 'accounts:team_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouvel utilisateur</a>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Service</th><th>Téléphone</th><th>Email</th><th>Actif</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.get_full_name|default:u.username }}</td>
+          <td>{{ u.get_role_display }}</td>
+          <td>{{ u.service|default:"-" }}</td>
+          <td>{{ u.phone|default:"-" }}</td>
+          <td>{{ u.email|default:"-" }}</td>
+          <td>{% if u.is_active %}<span class="badge bg-success">Actif</span>{% else %}<span class="badge bg-secondary">Inactif</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Aucun utilisateur.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "core/_pagination.html" with page_obj=page_obj %}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Modifier{% else %}Nouveau{% endif %} tiers - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-people"></i> {% if object %}Modifier{% else %}Nouveau{% endif %} client / tiers</h3>
+  <a href="{% url 'partners:list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+</div>
+<div class="card">
+  <div class="card-body p-4">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="col-md-6 {% if field.name == 'notes' %}col-12{% endif %}">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-4"><i class="bi bi-check-lg"></i> Enregistrer</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

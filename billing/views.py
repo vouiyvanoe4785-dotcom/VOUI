@@ -1,0 +1,190 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views import View
+from django.views.generic import DeleteView, DetailView, ListView
+
+from dossiers.models import Dossier
+
+from .forms import (
+    InvoiceForm, InvoiceLineFormSet, PaymentForm, QuoteForm, QuoteLineFormSet, ReminderForm,
+)
+from .models import Invoice, Payment, Quote, Reminder, StatutFacture
+
+
+class QuoteListView(LoginRequiredMixin, ListView):
+    model = Quote
+    template_name = "billing/quote_list.html"
+    context_object_name = "quotes"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Quote.objects.select_related("client", "dossier")
+
+
+class QuoteDetailView(LoginRequiredMixin, DetailView):
+    model = Quote
+    template_name = "billing/quote_detail.html"
+    context_object_name = "quote"
+
+
+class QuoteEditView(LoginRequiredMixin, View):
+    template_name = "billing/quote_form.html"
+
+    def get_instance(self, pk):
+        return get_object_or_404(Quote, pk=pk) if pk else None
+
+    def get(self, request, pk=None):
+        instance = self.get_instance(pk)
+        initial = {}
+        if not instance and request.GET.get("dossier"):
+            dossier = get_object_or_404(Dossier, pk=request.GET["dossier"])
+            initial = {"dossier": dossier.pk, "client": dossier.client.pk}
+        form = QuoteForm(instance=instance, initial=initial)
+        formset = QuoteLineFormSet(instance=instance)
+        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+
+    def post(self, request, pk=None):
+        instance = self.get_instance(pk)
+        form = QuoteForm(request.POST, instance=instance)
+        formset_instance = instance or Quote()
+        if form.is_valid():
+            quote = form.save(commit=False)
+            if not quote.created_by_id:
+                quote.created_by = request.user
+            quote.save()
+            formset = QuoteLineFormSet(request.POST, instance=quote)
+            if formset.is_valid():
+                formset.save()
+                messages.success(request, "Devis enregistré avec succès.")
+                return redirect("billing:quote_detail", pk=quote.pk)
+        else:
+            formset = QuoteLineFormSet(request.POST, instance=formset_instance)
+        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+
+
+class QuoteDeleteView(LoginRequiredMixin, DeleteView):
+    model = Quote
+    success_url = "/devis/"
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        messages.success(request, "Devis supprimé.")
+        return redirect("billing:quote_list")
+
+
+class InvoiceListView(LoginRequiredMixin, ListView):
+    model = Invoice
+    template_name = "billing/invoice_list.html"
+    context_object_name = "invoices"
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = Invoice.objects.select_related("client", "dossier")
+        statut = self.request.GET.get("statut")
+        if statut:
+            qs = qs.filter(statut=statut)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["statuts"] = StatutFacture.choices
+        ctx["current_statut"] = self.request.GET.get("statut", "")
+        return ctx
+
+
+class InvoiceDetailView(LoginRequiredMixin, DetailView):
+    model = Invoice
+    template_name = "billing/invoice_detail.html"
+    context_object_name = "invoice"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["payment_form"] = PaymentForm()
+        ctx["reminder_form"] = ReminderForm()
+        return ctx
+
+
+class InvoiceEditView(LoginRequiredMixin, View):
+    template_name = "billing/invoice_form.html"
+
+    def get_instance(self, pk):
+        return get_object_or_404(Invoice, pk=pk) if pk else None
+
+    def get(self, request, pk=None):
+        instance = self.get_instance(pk)
+        initial = {}
+        if not instance and request.GET.get("dossier"):
+            dossier = get_object_or_404(Dossier, pk=request.GET["dossier"])
+            initial = {"dossier": dossier.pk, "client": dossier.client.pk}
+        form = InvoiceForm(instance=instance, initial=initial)
+        formset = InvoiceLineFormSet(instance=instance)
+        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+
+    def post(self, request, pk=None):
+        instance = self.get_instance(pk)
+        form = InvoiceForm(request.POST, instance=instance)
+        formset_instance = instance or Invoice()
+        if form.is_valid():
+            invoice = form.save(commit=False)
+            if not invoice.created_by_id:
+                invoice.created_by = request.user
+            invoice.save()
+            formset = InvoiceLineFormSet(request.POST, instance=invoice)
+            if formset.is_valid():
+                formset.save()
+                messages.success(request, "Facture enregistrée avec succès.")
+                return redirect("billing:invoice_detail", pk=invoice.pk)
+        else:
+            formset = InvoiceLineFormSet(request.POST, instance=formset_instance)
+        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+
+
+class InvoiceDeleteView(LoginRequiredMixin, DeleteView):
+    model = Invoice
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        messages.success(request, "Facture supprimée.")
+        return redirect("billing:invoice_list")
+
+
+class PaymentCreateView(LoginRequiredMixin, View):
+    def post(self, request, invoice_pk):
+        invoice = get_object_or_404(Invoice, pk=invoice_pk)
+        if not request.user.can_manage_billing():
+            messages.error(request, "Vous n'êtes pas autorisé à enregistrer un paiement.")
+            return redirect("billing:invoice_detail", pk=invoice_pk)
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.invoice = invoice
+            payment.created_by = request.user
+            payment.save()
+            if invoice.solde <= 0:
+                invoice.statut = StatutFacture.PAYEE
+            else:
+                invoice.statut = StatutFacture.PAYEE_PARTIEL
+            invoice.save(update_fields=["statut"])
+            messages.success(request, "Paiement enregistré.")
+        else:
+            messages.error(request, "Erreur dans le formulaire de paiement.")
+        return redirect("billing:invoice_detail", pk=invoice_pk)
+
+
+class ReminderCreateView(LoginRequiredMixin, View):
+    def post(self, request, invoice_pk):
+        invoice = get_object_or_404(Invoice, pk=invoice_pk)
+        form = ReminderForm(request.POST)
+        if form.is_valid():
+            reminder = form.save(commit=False)
+            reminder.invoice = invoice
+            reminder.created_by = request.user
+            reminder.save()
+            messages.success(request, "Relance enregistrée.")
+        else:
+            messages.error(request, "Erreur dans le formulaire de relance.")
+        return redirect("billing:invoice_detail", pk=invoice_pk)

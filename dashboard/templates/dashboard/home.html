@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load ayden_extras %}
+{% block title %}Tableau de bord - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-speedometer2"></i> Tableau de bord</h3>
+  <span class="text-muted">Bienvenue, {{ user.get_full_name|default:user.username }}</span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card">
+      <div class="card-body">
+        <div class="text-muted small">Dossiers ouverts</div>
+        <div class="kpi-value">{{ nb_dossiers_ouverts }}</div>
+        <div class="text-muted small">sur {{ nb_dossiers_total }} au total</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-warning">
+      <div class="card-body">
+        <div class="text-muted small">En douane</div>
+        <div class="kpi-value">{{ nb_dossiers_en_douane }}</div>
+        <div class="text-muted small">dossiers en cours de dédouanement</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-success">
+      <div class="card-body">
+        <div class="text-muted small">Clients actifs</div>
+        <div class="kpi-value">{{ nb_clients }}</div>
+        <div class="text-muted small">clients &amp; tiers</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card {% if total_impaye > 0 %}kpi-warning{% endif %}">
+      <div class="card-body">
+        <div class="text-muted small">Impayés</div>
+        <div class="kpi-value">{{ total_impaye|floatformat:2 }}</div>
+        <div class="text-muted small">MAD en attente de paiement</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="section-title mb-3">Dossiers par statut</h6>
+        {% for row in dossiers_par_statut %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span>{{ statut_labels|get_item:row.statut }}</span>
+          <span class="badge bg-{{ row.statut|status_color }}">{{ row.total }}</span>
+        </div>
+        {% empty %}
+        <p class="text-muted">Aucun dossier pour le moment.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="section-title mb-3">Dossiers par type d'opération</h6>
+        {% for row in dossiers_par_type %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span>{{ type_labels|get_item:row.type_operation }}</span>
+          <span class="badge bg-primary">{{ row.total }}</span>
+        </div>
+        {% empty %}
+        <p class="text-muted">Aucun dossier pour le moment.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="section-title mb-3">Derniers dossiers</h6>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead><tr><th>Référence</th><th>Client</th><th>Statut</th><th>Ouvert le</th></tr></thead>
+            <tbody>
+              {% for d in dossiers_recents %}
+              <tr>
+                <td><a href="{% url 'dossiers:detail' d.pk %}">{{ d.reference }}</a></td>
+                <td>{{ d.client }}</td>
+                <td><span class="badge bg-{{ d.statut|status_color }}">{{ d.get_statut_display }}</span></td>
+                <td>{{ d.date_ouverture }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">Aucun dossier.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-body">
+        <h6 class="section-title mb-3">Factures impayées</h6>
+        <ul class="list-group list-group-flush">
+          {% for f in factures_impayees %}
+          <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+            <div>
+              <a href="{% url 'billing:invoice_detail' f.pk %}">{{ f.reference }}</a>
+              <div class="text-muted small">{{ f.client }}</div>
+            </div>
+            <span class="fw-semibold text-danger">{{ f.solde|floatformat:2 }} MAD</span>
+          </li>
+          {% empty %}
+          <li class="list-group-item px-0 text-muted">Aucune facture impayée. 🎉</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load ayden_extras %}
+{% block title %}Dossiers de transit - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-folder2-open"></i> Dossiers de transit</h3>
+  <a href="{% url 'dossiers:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouveau dossier</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-12 col-md-4">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher (référence, client, donneur d'ordre)">
+  </div>
+  <div class="col-6 col-md-3">
+    <select name="statut" class="form-select">
+      <option value="">Tous les statuts</option>
+      {% for value, label in statuts %}
+      <option value="{{ value }}" {% if current_statut == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <select name="type" class="form-select">
+      <option value="">Tous les types</option>
+      {% for value, label in types %}
+      <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 col-md-2">
+    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Référence</th><th>Client</th><th>Type</th><th>Régime / Incoterm</th><th>Agent</th><th>Ouverture</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        {% for d in dossiers %}
+        <tr>
+          <td><a href="{% url 'dossiers:detail' d.pk %}">{{ d.reference }}</a>{% if d.valide %} <i class="bi bi-patch-check-fill text-success" title="Validé"></i>{% endif %}</td>
+          <td>{{ d.client }}</td>
+          <td>{{ d.get_type_operation_display }}</td>
+          <td>{{ d.get_regime_douanier_display|default:"-" }} {% if d.incoterm %}/ {{ d.incoterm }}{% endif %}</td>
+          <td>{{ d.agent_responsable|default:"-" }}</td>
+          <td>{{ d.date_ouverture }}</td>
+          <td><span class="badge bg-{{ d.statut|status_color }}">{{ d.get_statut_display }}</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Aucun dossier trouvé.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "core/_pagination.html" %}
+{% endblock %}

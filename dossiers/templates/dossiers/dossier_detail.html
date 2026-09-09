@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load ayden_extras %}
+{% block title %}{{ dossier.reference }} - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3 class="section-title mb-0"><i class="bi bi-folder2-open"></i> {{ dossier.reference }}
+      <span class="badge bg-{{ dossier.statut|status_color }}">{{ dossier.get_statut_display }}</span>
+      {% if dossier.valide %}<span class="badge bg-success"><i class="bi bi-patch-check-fill"></i> Validé</span>{% endif %}
+    </h3>
+    <div class="text-muted">{{ dossier.client }} &middot; {{ dossier.get_type_operation_display }}</div>
+  </div>
+  <div>
+    <a href="{% url 'dossiers:update' dossier.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
+    {% if not dossier.valide and user.can_validate %}
+    <form method="post" action="{% url 'dossiers:validate' dossier.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-success"><i class="bi bi-patch-check"></i> Valider le dossier</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'dossiers:list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card"><div class="card-body py-3"><div class="text-muted small">Référence client</div><div class="fw-semibold">{{ dossier.reference_client|default:"-" }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card"><div class="card-body py-3"><div class="text-muted small">Donneur d'ordre</div><div class="fw-semibold">{{ dossier.donneur_ordre|default:"-" }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card"><div class="card-body py-3"><div class="text-muted small">Régime douanier</div><div class="fw-semibold">{{ dossier.get_regime_douanier_display|default:"-" }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card"><div class="card-body py-3"><div class="text-muted small">Incoterm</div><div class="fw-semibold">{{ dossier.incoterm|default:"-" }}</div></div></div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <div class="row">
+      <div class="col-md-4"><strong>Origine :</strong> {{ dossier.origine|default:"-" }}</div>
+      <div class="col-md-4"><strong>Provenance :</strong> {{ dossier.provenance|default:"-" }}</div>
+      <div class="col-md-4"><strong>Destination :</strong> {{ dossier.destination|default:"-" }}</div>
+    </div>
+    {% if dossier.notes %}<hr class="my-2"><div>{{ dossier.notes|linebreaks }}</div>{% endif %}
+  </div>
+</div>
+
+<ul class="nav nav-tabs" id="dossierTabs" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#marchandises" type="button">Marchandises ({{ marchandises|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">Documents ({{ documents|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devis" type="button">Devis ({{ devis|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#factures" type="button">Factures ({{ factures|length }})</button></li>
+</ul>
+<div class="tab-content border border-top-0 p-3 bg-white rounded-bottom mb-4">
+
+  <div class="tab-pane fade show active" id="marchandises">
+    <div class="d-flex justify-content-end mb-2">
+      <a href="{% url 'cargo:create' dossier.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Ajouter une marchandise</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Désignation</th><th>Code SH</th><th>Quantité</th><th>Poids brut</th><th>Valeur</th><th>Origine</th><th></th></tr></thead>
+        <tbody>
+          {% for m in marchandises %}
+          <tr>
+            <td>{{ m.designation }}</td>
+            <td>{{ m.code_hs|default:"-" }}</td>
+            <td>{{ m.quantite }} {{ m.unite }}</td>
+            <td>{{ m.poids_brut|default:"-" }}</td>
+            <td>{{ m.valeur|default:"-" }} {{ m.devise }}</td>
+            <td>{{ m.origine|default:"-" }}</td>
+            <td class="text-end"><a href="{% url 'cargo:update' m.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-3">Aucune marchandise enregistrée.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="documents">
+    <div class="d-flex justify-content-end mb-2">
+      <a href="{% url 'documents:create' dossier.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Ajouter un document</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Type</th><th>Libellé</th><th>Date</th><th>Fichier</th><th></th></tr></thead>
+        <tbody>
+          {% for doc in documents %}
+          <tr>
+            <td>{{ doc.get_type_document_display }}</td>
+            <td>{{ doc.libelle|default:"-" }}</td>
+            <td>{{ doc.date_document|default:"-" }}</td>
+            <td><a href="{{ doc.fichier.url }}" target="_blank"><i class="bi bi-download"></i> {{ doc.filename }}</a></td>
+            <td class="text-end">
+              <form method="post" action="{% url 'documents:delete' doc.pk %}" class="d-inline" onsubmit="return confirm('Supprimer ce document ?');">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">Aucun document lié.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="devis">
+    <div class="d-flex justify-content-end mb-2">
+      <a href="{% url 'billing:quote_create' %}?dossier={{ dossier.pk }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nouveau devis</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Référence</th><th>Type</th><th>Statut</th><th>Date</th><th>Montant</th></tr></thead>
+        <tbody>
+          {% for q in devis %}
+          <tr>
+            <td><a href="{% url 'billing:quote_detail' q.pk %}">{{ q.reference }}</a></td>
+            <td>{{ q.get_type_devis_display }}</td>
+            <td><span class="badge bg-{{ q.statut|status_color }}">{{ q.get_statut_display }}</span></td>
+            <td>{{ q.date_creation }}</td>
+            <td>{{ q.montant_total|floatformat:2 }} MAD</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">Aucun devis pour ce dossier.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="factures">
+    <div class="d-flex justify-content-end mb-2">
+      <a href="{% url 'billing:invoice_create' %}?dossier={{ dossier.pk }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nouvelle facture</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Référence</th><th>Statut</th><th>Échéance</th><th>Total</th><th>Payé</th><th>Solde</th></tr></thead>
+        <tbody>
+          {% for f in factures %}
+          <tr>
+            <td><a href="{% url 'billing:invoice_detail' f.pk %}">{{ f.reference }}</a></td>
+            <td><span class="badge bg-{{ f.statut|status_color }}">{{ f.get_statut_display }}</span></td>
+            <td>{{ f.date_echeance|default:"-" }}</td>
+            <td>{{ f.montant_total|floatformat:2 }}</td>
+            <td>{{ f.montant_paye|floatformat:2 }}</td>
+            <td>{{ f.solde|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-3">Aucune facture pour ce dossier.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
