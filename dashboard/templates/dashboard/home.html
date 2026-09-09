@@ -44,6 +44,17 @@
       </div>
     </div>
   </div>
+  {% if user.can_manage_billing %}
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-success">
+      <div class="card-body">
+        <div class="text-muted small">Trésorerie</div>
+        <div class="kpi-value">{{ solde_tresorerie|floatformat:2 }}</div>
+        <div class="text-muted small"><a href="{% url 'treasury:account_list' %}">MAD sur les caisses actives</a></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <div class="row g-3 mb-4">

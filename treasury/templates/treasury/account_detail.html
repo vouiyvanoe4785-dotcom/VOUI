@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ account.nom }} - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3 class="section-title mb-0"><i class="bi bi-wallet2"></i> {{ account.nom }}</h3>
+    <span class="text-muted">{{ account.get_type_compte_display }}{% if account.numero_compte %} &middot; {{ account.numero_compte }}{% endif %}</span>
+  </div>
+  <div>
+    <a href="{% url 'treasury:account_update' account.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
+    <a href="{% url 'treasury:transaction_create' account.pk %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Ajouter un mouvement</a>
+    <a href="{% url 'treasury:account_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-4">
+    <div class="card kpi-card kpi-success"><div class="card-body py-3"><div class="text-muted small">Solde actuel</div><div class="kpi-value">{{ account.solde|floatformat:2 }} {{ account.devise }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card kpi-card"><div class="card-body py-3"><div class="text-muted small">Solde initial</div><div class="fw-semibold">{{ account.solde_initial|floatformat:2 }} {{ account.devise }}</div></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Date</th><th>Catégorie</th><th>Libellé</th><th>Dossier</th><th>Tiers</th><th class="text-end">Montant</th></tr></thead>
+      <tbody>
+        {% for m in mouvements %}
+        <tr>
+          <td>{{ m.date_mouvement }}</td>
+          <td>{{ m.get_categorie_display }}</td>
+          <td>{{ m.description|default:"-" }}</td>
+          <td>{% if m.dossier %}<a href="{% url 'dossiers:detail' m.dossier.pk %}">{{ m.dossier.reference }}</a>{% else %}-{% endif %}</td>
+          <td>{{ m.tiers|default:"-" }}</td>
+          <td class="text-end {% if m.type_mouvement == 'entree' %}text-success{% else %}text-danger{% endif %} fw-semibold">
+            {% if m.type_mouvement == 'entree' %}+{% else %}-{% endif %}{{ m.montant|floatformat:2 }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Aucun mouvement enregistré.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

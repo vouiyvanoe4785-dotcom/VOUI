@@ -57,14 +57,23 @@ InvoiceLineFormSet = inlineformset_factory(
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
-        fields = ["montant", "date_paiement", "mode_paiement", "reference", "notes"]
+        fields = ["montant", "date_paiement", "mode_paiement", "reference", "compte", "notes"]
         widgets = {
             "montant": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "date_paiement": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "mode_paiement": forms.Select(attrs={"class": "form-select"}),
             "reference": forms.TextInput(attrs={"class": "form-control"}),
+            "compte": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.TextInput(attrs={"class": "form-control"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from treasury.models import CashAccount
+
+        self.fields["compte"].queryset = CashAccount.objects.filter(is_active=True)
+        self.fields["compte"].required = False
+        self.fields["compte"].empty_label = "— Non encaissé sur une caisse —"
 
 
 class ReminderForm(forms.ModelForm):

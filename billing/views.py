@@ -164,6 +164,21 @@ class PaymentCreateView(LoginRequiredMixin, View):
             payment.invoice = invoice
             payment.created_by = request.user
             payment.save()
+            if payment.compte:
+                from treasury.models import CashTransaction, TypeMouvement
+
+                CashTransaction.objects.create(
+                    compte=payment.compte,
+                    type_mouvement=TypeMouvement.ENTREE,
+                    categorie="encaissement_client",
+                    montant=payment.montant,
+                    date_mouvement=payment.date_paiement,
+                    description=f"Encaissement facture {invoice.reference} - {invoice.client}",
+                    dossier=invoice.dossier,
+                    tiers=invoice.client,
+                    related_payment=payment,
+                    created_by=request.user,
+                )
             if invoice.solde <= 0:
                 invoice.statut = StatutFacture.PAYEE
             else:

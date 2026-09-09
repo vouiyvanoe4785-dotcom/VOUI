@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 from billing.models import Invoice, StatutFacture
 from dossiers.models import Dossier, StatutDossier, TypeOperation
 from partners.models import Partner
+from treasury.models import CashAccount
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -41,5 +42,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         ctx["factures_impayees"] = [f for f in invoices if f.solde > 0][:10]
         ctx["dossiers_recents"] = dossiers_qs.select_related("client").order_by("-created_at")[:8]
+
+        comptes = CashAccount.objects.filter(is_active=True)
+        ctx["solde_tresorerie"] = sum((c.solde for c in comptes), 0)
 
         return ctx

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Caisse & Trésorerie - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-wallet2"></i> Caisse &amp; Trésorerie</h3>
+  <div>
+    <a href="{% url 'treasury:transfer_create' %}" class="btn btn-outline-primary"><i class="bi bi-arrow-left-right"></i> Virement interne</a>
+    <a href="{% url 'treasury:account_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nouvelle caisse / compte</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-md-4">
+    <div class="card kpi-card kpi-success">
+      <div class="card-body">
+        <div class="text-muted small">Solde global (toutes caisses)</div>
+        <div class="kpi-value">{{ solde_global|floatformat:2 }} MAD</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  {% for a in accounts %}
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h6 class="section-title mb-0">{{ a.nom }}</h6>
+            <span class="text-muted small">{{ a.get_type_compte_display }}</span>
+          </div>
+          {% if not a.is_active %}<span class="badge bg-secondary">Inactif</span>{% endif %}
+        </div>
+        <div class="fs-4 fw-bold mt-2" style="color:#0b2942;">{{ a.solde|floatformat:2 }} {{ a.devise }}</div>
+        <a href="{% url 'treasury:account_detail' a.pk %}" class="btn btn-sm btn-outline-primary mt-2">Voir les mouvements</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="card"><div class="card-body text-center text-muted py-5">Aucune caisse / compte enregistré. Créez-en un pour commencer à suivre votre trésorerie.</div></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

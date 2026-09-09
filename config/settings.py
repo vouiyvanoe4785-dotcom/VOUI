@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "cargo",
     "documents",
     "billing",
+    "treasury",
     "dashboard",
 ]
 

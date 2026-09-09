@@ -195,6 +195,10 @@ class Payment(models.Model):
     )
     reference = models.CharField("Référence (chèque, virement...)", max_length=100, blank=True)
     notes = models.CharField("Notes", max_length=255, blank=True)
+    compte = models.ForeignKey(
+        "treasury.CashAccount", verbose_name="Caisse / compte encaissé",
+        on_delete=models.SET_NULL, null=True, blank=True, related_name="encaissements",
+    )
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True

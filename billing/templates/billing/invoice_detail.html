@@ -70,6 +70,10 @@
             <div class="col-6">{{ payment_form.date_paiement }}</div>
             <div class="col-6">{{ payment_form.mode_paiement }}</div>
             <div class="col-6">{{ payment_form.reference }}</div>
+            <div class="col-12">
+              <label class="form-label small text-muted mb-0">Encaisser sur une caisse / compte</label>
+              {{ payment_form.compte }}
+            </div>
             <div class="col-12">{{ payment_form.notes }}</div>
             <div class="col-12"><button class="btn btn-sm btn-primary w-100" type="submit"><i class="bi bi-plus-lg"></i> Ajouter un paiement</button></div>
           </div>
