@@ -1,0 +1,52 @@
+{% load ayden_extras %}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="section-title mb-3"><i class="bi bi-patch-check"></i> Validation &amp; signature</h6>
+    {% if steps %}
+    <ul class="list-group list-group-flush">
+      {% for step in steps %}
+      <li class="list-group-item px-0">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div>
+            <strong>{{ step.ordre }}. {{ step.libelle }}</strong>
+            <div class="text-muted small">Rôle requis : {{ step.get_role_requis_display }}</div>
+            {% if step.statut != "en_attente" %}
+            <div class="text-muted small mt-1">
+              {{ step.get_statut_display }} par <strong>{{ step.signature_nom|default:step.validateur }}</strong>
+              le {{ step.date_validation|date:"d/m/Y à H:i" }}
+              {% if step.commentaire %}<br>« {{ step.commentaire }} »{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <span class="badge bg-{{ step.statut|status_color }}">{{ step.get_statut_display }}</span>
+        </div>
+
+        {% if step|can_act:user %}
+        <form method="post" action="{% url 'approvals:action' step.pk %}" class="row g-2 mt-2">
+          {% csrf_token %}
+          <div class="col-md-4">
+            <input type="text" name="signature_nom" class="form-control form-control-sm" placeholder="Nom du signataire" value="{{ user.get_full_name }}" required>
+          </div>
+          <div class="col-md-5">
+            <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Commentaire (obligatoire en cas de refus)">
+          </div>
+          <div class="col-md-3 d-flex gap-1">
+            <button type="submit" name="action" value="approuver" class="btn btn-sm btn-success flex-fill"><i class="bi bi-check-lg"></i> Approuver</button>
+            <button type="submit" name="action" value="refuser" class="btn btn-sm btn-outline-danger flex-fill"><i class="bi bi-x-lg"></i> Refuser</button>
+          </div>
+        </form>
+        {% elif step.statut == "en_attente" and step.is_bloquee %}
+        <div class="text-muted small mt-1"><i class="bi bi-lock"></i> En attente de l'étape précédente</div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted mb-2">Aucun circuit de validation démarré pour ce dossier.</p>
+    <form method="post" action="{% url 'approvals:start' validation_ct_id validation_object_id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-play-fill"></i> Démarrer la validation</button>
+    </form>
+    {% endif %}
+  </div>
+</div>

@@ -12,12 +12,6 @@
   </div>
   <div>
     <a href="{% url 'dossiers:update' dossier.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
-    {% if not dossier.valide and user.can_validate %}
-    <form method="post" action="{% url 'dossiers:validate' dossier.pk %}" class="d-inline">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-success"><i class="bi bi-patch-check"></i> Valider le dossier</button>
-    </form>
-    {% endif %}
     <a href="{% url 'dossiers:list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour</a>
   </div>
 </div>
@@ -47,6 +41,8 @@
     {% if dossier.notes %}<hr class="my-2"><div>{{ dossier.notes|linebreaks }}</div>{% endif %}
   </div>
 </div>
+
+{% include "approvals/_workflow.html" with steps=validation_steps %}
 
 <ul class="nav nav-tabs" id="dossierTabs" role="tablist">
   <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#marchandises" type="button">Marchandises ({{ marchandises|length }})</button></li>

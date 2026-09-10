@@ -26,12 +26,25 @@ STATUS_COLORS = {
     "recue": "info",
     "validee": "primary",
     "contestee": "danger",
+    # Étapes de validation
+    "en_attente": "secondary",
+    "approuvee": "success",
+    "refusee": "danger",
 }
 
 
 @register.filter
 def status_color(value):
     return STATUS_COLORS.get(value, "secondary")
+
+
+@register.filter
+def can_act(step, user):
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if step.statut != "en_attente" or step.is_bloquee:
+        return False
+    return user.is_admin_role() or user.role == step.role_requis
 
 
 @register.filter

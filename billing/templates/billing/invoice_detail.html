@@ -47,6 +47,8 @@
 <div class="card mb-3"><div class="card-body"><strong>Note de détail :</strong> {{ invoice.notes|linebreaks }}</div></div>
 {% endif %}
 
+{% include "approvals/_workflow.html" with steps=validation_steps %}
+
 <div class="row g-3">
   <div class="col-md-6">
     <div class="card h-100">

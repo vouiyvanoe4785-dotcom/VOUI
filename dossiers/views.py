@@ -1,11 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from django.http import HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.utils import timezone
-from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
+from django.views.generic import CreateView, DetailView, ListView, UpdateView
+
+from approvals.workflows import get_steps
 
 from .forms import DossierForm
 from .models import Dossier, StatutDossier, TypeOperation
@@ -55,6 +54,9 @@ class DossierDetailView(LoginRequiredMixin, DetailView):
         ctx["devis"] = self.object.devis.all()
         ctx["factures"] = self.object.factures.all()
         ctx["achats"] = self.object.achats.all()
+        ctx["validation_steps"] = get_steps(self.object)
+        ctx["validation_ct_id"] = ContentType.objects.get_for_model(Dossier).id
+        ctx["validation_object_id"] = self.object.pk
         return ctx
 
 
@@ -77,16 +79,3 @@ class DossierUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Dossier mis à jour.")
         return super().form_valid(form)
-
-
-class DossierValidateView(LoginRequiredMixin, View):
-    def post(self, request, pk):
-        dossier = get_object_or_404(Dossier, pk=pk)
-        if not request.user.can_validate():
-            return HttpResponseForbidden("Vous n'êtes pas autorisé à valider ce dossier.")
-        dossier.valide = True
-        dossier.valide_par = request.user
-        dossier.valide_le = timezone.now()
-        dossier.save(update_fields=["valide", "valide_par", "valide_le"])
-        messages.success(request, f"Dossier {dossier.reference} validé.")
-        return redirect("dossiers:detail", pk=pk)

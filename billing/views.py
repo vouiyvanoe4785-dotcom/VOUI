@@ -1,10 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DeleteView, DetailView, ListView
 
+from approvals.workflows import get_steps
 from dossiers.models import Dossier
 
 from .forms import (
@@ -104,6 +106,9 @@ class InvoiceDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["payment_form"] = PaymentForm()
         ctx["reminder_form"] = ReminderForm()
+        ctx["validation_steps"] = get_steps(self.object)
+        ctx["validation_ct_id"] = ContentType.objects.get_for_model(Invoice).id
+        ctx["validation_object_id"] = self.object.pk
         return ctx
 
 
