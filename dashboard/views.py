@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 from billing.models import Invoice, StatutFacture
 from dossiers.models import Dossier, StatutDossier, TypeOperation
 from partners.models import Partner
+from purchasing.models import StatutAchat, SupplierInvoice
 from treasury.models import CashAccount
 
 
@@ -45,5 +46,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         comptes = CashAccount.objects.filter(is_active=True)
         ctx["solde_tresorerie"] = sum((c.solde for c in comptes), 0)
+
+        achats = SupplierInvoice.objects.exclude(statut=StatutAchat.ANNULEE)
+        ctx["total_dettes_fournisseurs"] = sum(
+            (a.solde for a in achats if a.solde > 0), 0
+        )
 
         return ctx

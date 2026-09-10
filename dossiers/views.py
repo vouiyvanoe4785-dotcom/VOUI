@@ -54,6 +54,7 @@ class DossierDetailView(LoginRequiredMixin, DetailView):
         ctx["documents"] = self.object.documents.all()
         ctx["devis"] = self.object.devis.all()
         ctx["factures"] = self.object.factures.all()
+        ctx["achats"] = self.object.achats.all()
         return ctx
 
 

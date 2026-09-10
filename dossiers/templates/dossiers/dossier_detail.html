@@ -53,6 +53,7 @@
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">Documents ({{ documents|length }})</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devis" type="button">Devis ({{ devis|length }})</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#factures" type="button">Factures ({{ factures|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#achats" type="button">Achats ({{ achats|length }})</button></li>
 </ul>
 <div class="tab-content border border-top-0 p-3 bg-white rounded-bottom mb-4">
 
@@ -154,6 +155,31 @@
           </tr>
           {% empty %}
           <tr><td colspan="6" class="text-center text-muted py-3">Aucune facture pour ce dossier.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="achats">
+    <div class="d-flex justify-content-end mb-2">
+      <a href="{% url 'purchasing:invoice_create' %}?dossier={{ dossier.pk }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nouvel achat</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Référence</th><th>Fournisseur</th><th>Statut</th><th>Total</th><th>Payé</th><th>Solde</th></tr></thead>
+        <tbody>
+          {% for a in achats %}
+          <tr>
+            <td><a href="{% url 'purchasing:invoice_detail' a.pk %}">{{ a.reference }}</a></td>
+            <td>{{ a.fournisseur }}</td>
+            <td><span class="badge bg-{{ a.statut|status_color }}">{{ a.get_statut_display }}</span></td>
+            <td>{{ a.montant_total|floatformat:2 }}</td>
+            <td>{{ a.montant_paye|floatformat:2 }}</td>
+            <td>{{ a.solde|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-3">Aucun achat pour ce dossier.</td></tr>
           {% endfor %}
         </tbody>
       </table>

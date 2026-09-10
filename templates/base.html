@@ -26,6 +26,7 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'partners:list' %}"><i class="bi bi-people"></i> Clients &amp; Tiers</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'billing:quote_list' %}"><i class="bi bi-file-earmark-text"></i> Devis</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'billing:invoice_list' %}"><i class="bi bi-receipt"></i> Factures</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'purchasing:invoice_list' %}"><i class="bi bi-bag"></i> Achats</a></li>
         {% if user.can_manage_billing %}
         <li class="nav-item"><a class="nav-link" href="{% url 'treasury:account_list' %}"><i class="bi bi-wallet2"></i> Caisse</a></li>
         {% endif %}

@@ -22,6 +22,10 @@ STATUS_COLORS = {
     "payee": "success",
     "en_retard": "danger",
     "annulee": "danger",
+    # Achats fournisseurs
+    "recue": "info",
+    "validee": "primary",
+    "contestee": "danger",
 }
 
 

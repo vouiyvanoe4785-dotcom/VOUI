@@ -43,6 +43,7 @@ class PartnerDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["dossiers"] = self.object.dossiers.all()[:10]
+        ctx["achats"] = self.object.achats.all()[:10]
         return ctx
 
 

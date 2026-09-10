@@ -95,6 +95,10 @@ class CashTransaction(models.Model):
         "billing.Payment", verbose_name="Paiement de facture lié", on_delete=models.SET_NULL,
         null=True, blank=True, related_name="mouvement_caisse",
     )
+    related_supplier_payment = models.OneToOneField(
+        "purchasing.SupplierPayment", verbose_name="Paiement fournisseur lié",
+        on_delete=models.SET_NULL, null=True, blank=True, related_name="mouvement_caisse",
+    )
     transfer_ref = models.ForeignKey(
         "self", verbose_name="Mouvement de virement lié", on_delete=models.SET_NULL,
         null=True, blank=True, related_name="+",

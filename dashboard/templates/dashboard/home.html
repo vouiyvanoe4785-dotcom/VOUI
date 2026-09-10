@@ -54,6 +54,15 @@
       </div>
     </div>
   </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card {% if total_dettes_fournisseurs > 0 %}kpi-warning{% endif %}">
+      <div class="card-body">
+        <div class="text-muted small">Dettes fournisseurs</div>
+        <div class="kpi-value">{{ total_dettes_fournisseurs|floatformat:2 }}</div>
+        <div class="text-muted small"><a href="{% url 'purchasing:invoice_list' %}">MAD restant à payer</a></div>
+      </div>
+    </div>
+  </div>
   {% endif %}
 </div>
 
