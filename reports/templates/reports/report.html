@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Rapports par service - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-bar-chart-line"></i> Rapports par service</h3>
+  <a href="{% url 'reports:service_report_export' %}?date_debut={{ date_debut|date:'Y-m-d' }}&date_fin={{ date_fin|date:'Y-m-d' }}&service={{ service }}" class="btn btn-outline-primary">
+    <i class="bi bi-download"></i> Exporter en CSV
+  </a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small text-muted mb-0">Du</label>
+    <input type="date" name="date_debut" value="{{ date_debut|date:'Y-m-d' }}" class="form-control">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small text-muted mb-0">Au</label>
+    <input type="date" name="date_fin" value="{{ date_fin|date:'Y-m-d' }}" class="form-control">
+  </div>
+  <div class="col-8 col-md-4">
+    <label class="form-label small text-muted mb-0">Service</label>
+    <select name="service" class="form-select">
+      <option value="">Tous les services</option>
+      {% for s in services %}
+      <option value="{{ s }}" {% if service == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-4 col-md-2 d-flex align-items-end">
+    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card"><div class="card-body py-3"><div class="text-muted small">Dossiers ouverts</div><div class="kpi-value">{{ totaux.nb_dossiers }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-success"><div class="card-body py-3"><div class="text-muted small">CA encaissé</div><div class="kpi-value">{{ totaux.ca_encaisse|floatformat:2 }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card kpi-warning"><div class="card-body py-3"><div class="text-muted small">Dépenses payées</div><div class="kpi-value">{{ totaux.depenses_payees|floatformat:2 }}</div></div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card kpi-card {% if totaux.resultat < 0 %}kpi-warning{% else %}kpi-success{% endif %}"><div class="card-body py-3"><div class="text-muted small">Résultat (encaissé - payé)</div><div class="kpi-value">{{ totaux.resultat|floatformat:2 }}</div></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th class="text-end">Dossiers</th>
+          <th class="text-end">CA facturé</th>
+          <th class="text-end">CA encaissé</th>
+          <th class="text-end">Dépenses engagées</th>
+          <th class="text-end">Dépenses payées</th>
+          <th class="text-end">Résultat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.service }}</td>
+          <td class="text-end">{{ row.nb_dossiers }}</td>
+          <td class="text-end">{{ row.ca_facture|floatformat:2 }}</td>
+          <td class="text-end">{{ row.ca_encaisse|floatformat:2 }}</td>
+          <td class="text-end">{{ row.depenses_engagees|floatformat:2 }}</td>
+          <td class="text-end">{{ row.depenses_payees|floatformat:2 }}</td>
+          <td class="text-end {% if row.resultat < 0 %}text-danger{% else %}text-success{% endif %} fw-semibold">{{ row.resultat|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Aucune donnée pour cette période.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if rows %}
+      <tfoot>
+        <tr class="table-light fw-semibold">
+          <td>TOTAL</td>
+          <td class="text-end">{{ totaux.nb_dossiers }}</td>
+          <td class="text-end">{{ totaux.ca_facture|floatformat:2 }}</td>
+          <td class="text-end">{{ totaux.ca_encaisse|floatformat:2 }}</td>
+          <td class="text-end">{{ totaux.depenses_engagees|floatformat:2 }}</td>
+          <td class="text-end">{{ totaux.depenses_payees|floatformat:2 }}</td>
+          <td class="text-end">{{ totaux.resultat|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+<p class="text-muted small mt-2">
+  Dossiers comptés sur leur date d'ouverture ; CA sur la date d'émission des factures ;
+  dépenses sur la date des factures fournisseurs. Le service affiché est celui de l'agent responsable du dossier
+  (« Non affecté » si aucun agent ou aucun dossier lié).
+</p>
+{% endblock %}

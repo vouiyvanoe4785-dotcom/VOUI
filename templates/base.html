@@ -29,6 +29,7 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'purchasing:invoice_list' %}"><i class="bi bi-bag"></i> Achats</a></li>
         {% if user.can_manage_billing %}
         <li class="nav-item"><a class="nav-link" href="{% url 'treasury:account_list' %}"><i class="bi bi-wallet2"></i> Caisse</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'reports:service_report' %}"><i class="bi bi-bar-chart-line"></i> Rapports</a></li>
         {% endif %}
         {% if user.is_admin_role %}
         <li class="nav-item"><a class="nav-link" href="{% url 'accounts:team_list' %}"><i class="bi bi-person-badge"></i> Équipe</a></li>

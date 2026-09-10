@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "purchasing",
     "treasury",
     "approvals",
+    "reports",
     "dashboard",
 ]
 
