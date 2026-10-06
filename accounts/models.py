@@ -21,6 +21,11 @@ class User(AbstractUser):
         help_text="Uniquement pour le rôle « Client (portail) » : le client ne voit que ses propres dossiers.",
     )
 
+    recap_alertes_email = models.BooleanField(
+        "Recevoir le récapitulatif des alertes par e-mail", default=True,
+        help_text="Envoyé chaque matin s'il y a des alertes qui vous concernent (équipe uniquement).",
+    )
+
     @property
     def is_client_portal(self):
         return self.role == Role.CLIENT

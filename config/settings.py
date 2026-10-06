@@ -168,6 +168,10 @@ ALERTE_FACTURE_RETARD_CRITIQUE_JOURS = config("ALERTE_FACTURE_RETARD_CRITIQUE_JO
 ALERTE_ECHEANCE_PROCHE_JOURS = config("ALERTE_ECHEANCE_PROCHE_JOURS", default=3, cast=int)
 ALERTE_REPONSE_DEVIS_JOURS = config("ALERTE_REPONSE_DEVIS_JOURS", default=7, cast=int)
 
+# Adresse publique de l'application, pour les liens des e-mails envoyés hors requête
+# (récapitulatif quotidien des alertes).
+SITE_URL = config("SITE_URL", default="http://127.0.0.1:8000").rstrip("/")
+
 # Fichiers téléversés : jamais publiés tels quels. En production derrière Nginx, renseigner
 # le préfixe d'une location `internal` pointant sur MEDIA_ROOT (voir README) pour que Nginx
 # envoie les fichiers après le contrôle d'accès de Django.

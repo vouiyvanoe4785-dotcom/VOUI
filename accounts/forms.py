@@ -9,7 +9,7 @@ from .models import Role, User
 class UserCreateForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("username", "first_name", "last_name", "email", "role", "partner", "phone", "service")
+        fields = ("username", "first_name", "last_name", "email", "role", "partner", "phone", "service", "recap_alertes_email")
         widgets = {
             "first_name": forms.TextInput(attrs={"class": "form-control"}),
             "last_name": forms.TextInput(attrs={"class": "form-control"}),
@@ -18,6 +18,7 @@ class UserCreateForm(UserCreationForm):
             "partner": forms.Select(attrs={"class": "form-select"}),
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "service": forms.TextInput(attrs={"class": "form-control"}),
+            "recap_alertes_email": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):
