@@ -152,3 +152,106 @@ class BillingPdfTests(TestCase):
         self.assertContains(
             self.client.get(quote.get_absolute_url()), reverse("billing:quote_pdf", args=[quote.pk])
         )
+
+
+class ExonerationTvaTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("compta", password="x", role=Role.COMPTABLE)
+        self.client.force_login(self.user)
+        self.exonere = Partner.objects.create(
+            raison_sociale="Zone Franche SA", exonere_tva=True,
+            motif_exoneration="Zone franche - attestation n° ZF-42",
+        )
+        self.normal = Partner.objects.create(raison_sociale="Atlas Import")
+
+    def post_invoice(self, client, pk=None, taux="20", extra=None):
+        data = {
+            "client": client.pk, "statut": "brouillon",
+            "lignes-TOTAL_FORMS": "1", "lignes-INITIAL_FORMS": "0",
+            "lignes-MIN_NUM_FORMS": "0", "lignes-MAX_NUM_FORMS": "1000",
+            "lignes-0-type_frais": "honoraires", "lignes-0-designation": "Honoraires",
+            "lignes-0-quantite": "1", "lignes-0-prix_unitaire": "1000", "lignes-0-taux_tva": taux,
+        }
+        data.update(extra or {})
+        url = reverse("billing:invoice_update", args=[pk]) if pk else reverse("billing:invoice_create")
+        return self.client.post(url, data, follow=True)
+
+    def test_exempt_client_forces_zero_rate(self):
+        resp = self.post_invoice(self.exonere, taux="20")
+        invoice = Invoice.objects.get()
+        self.assertTrue(invoice.exonere_tva)
+        self.assertEqual(invoice.motif_exoneration, "Zone franche - attestation n° ZF-42")
+        self.assertEqual(invoice.lignes.get().taux_tva, 0)
+        self.assertEqual(invoice.montant_total, Decimal("1000.00"))
+        self.assertContains(resp, "exonéré de TVA")
+        self.assertContains(resp, "ZF-42")
+
+    def test_normal_client_keeps_rate(self):
+        self.post_invoice(self.normal, taux="20")
+        invoice = Invoice.objects.get()
+        self.assertFalse(invoice.exonere_tva)
+        self.assertEqual(invoice.montant_total, Decimal("1200.00"))
+
+    def test_switching_to_exempt_client_zeroes_untouched_lines(self):
+        invoice = Invoice.objects.create(client=self.normal)
+        line = InvoiceLine.objects.create(
+            invoice=invoice, type_frais="honoraires", designation="H", prix_unitaire="1000", taux_tva=20
+        )
+        # Edit only the header: the existing line is submitted unchanged, so the formset skips it.
+        self.post_invoice(self.exonere, pk=invoice.pk, extra={
+            "lignes-INITIAL_FORMS": "1", "lignes-0-id": line.pk, "lignes-0-invoice": invoice.pk,
+        })
+        invoice.refresh_from_db()
+        self.assertTrue(invoice.exonere_tva)
+        self.assertEqual(invoice.montant_tva, Decimal("0"))
+
+    def test_past_documents_are_not_rewritten(self):
+        invoice = Invoice.objects.create(client=self.normal)
+        line = InvoiceLine.objects.create(
+            invoice=invoice, type_frais="honoraires", designation="H", prix_unitaire="1000", taux_tva=20
+        )
+        self.normal.exonere_tva = True
+        self.normal.motif_exoneration = "Export"
+        self.normal.save()
+
+        # Editing the old invoice (e.g. to change its status) keeps the VAT it was issued with.
+        self.post_invoice(self.normal, pk=invoice.pk, extra={
+            "statut": "payee", "lignes-INITIAL_FORMS": "1",
+            "lignes-0-id": line.pk, "lignes-0-invoice": invoice.pk,
+        })
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.statut, "payee")
+        self.assertFalse(invoice.exonere_tva)
+        self.assertEqual(invoice.montant_total, Decimal("1200.00"))
+
+        # A new invoice for the now-exempt client is at 0 %.
+        new = Invoice.objects.create(client=self.normal)
+        new_line = InvoiceLine.objects.create(
+            invoice=new, type_frais="honoraires", designation="H", prix_unitaire="1000", taux_tva=20
+        )
+        self.assertTrue(new.exonere_tva)
+        self.assertEqual(new_line.taux_tva, 0)
+
+    def test_quote_exemption_and_pdf_mention(self):
+        quote = Quote.objects.create(client=self.exonere)
+        QuoteLine.objects.create(quote=quote, type_frais="transport", designation="T", prix_unitaire="500", taux_tva=14)
+        self.assertEqual(quote.montant_total, Decimal("500.00"))
+        text = pdf_text(self.client.get(reverse("billing:quote_pdf", args=[quote.pk])).content)
+        self.assertIn("Exonéré de TVA - Zone franche - attestation n° ZF-42", text)
+
+    def test_form_exposes_exempt_clients(self):
+        resp = self.client.get(reverse("billing:invoice_create"))
+        self.assertContains(resp, 'id="clients-exoneres"')
+        self.assertContains(resp, f"[{self.exonere.pk}]")
+
+
+class PartnerExonerationFormTests(TestCase):
+    def test_motif_required_when_exempt(self):
+        from partners.forms import PartnerForm
+
+        base = {"type_tiers": "client", "raison_sociale": "ZF", "pays": "Maroc", "is_active": True}
+        form = PartnerForm(data={**base, "exonere_tva": True, "motif_exoneration": "  "})
+        self.assertFalse(form.is_valid())
+        self.assertIn("motif_exoneration", form.errors)
+        form = PartnerForm(data={**base, "exonere_tva": True, "motif_exoneration": "Zone franche"})
+        self.assertTrue(form.is_valid(), form.errors)

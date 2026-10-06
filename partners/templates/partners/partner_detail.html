@@ -23,6 +23,7 @@
           <dt class="col-5">Téléphone</dt><dd class="col-7">{{ partner.telephone|default:"-" }}</dd>
           <dt class="col-5">Email</dt><dd class="col-7">{{ partner.email|default:"-" }}</dd>
           <dt class="col-5">Adresse</dt><dd class="col-7">{{ partner.adresse|default:"-" }}, {{ partner.ville }}, {{ partner.pays }}</dd>
+          <dt class="col-5">TVA</dt><dd class="col-7">{% if partner.exonere_tva %}<span class="badge bg-warning text-dark">Exonéré</span> <span class="small">{{ partner.motif_exoneration }}</span>{% else %}Assujetti{% endif %}</dd>
           <dt class="col-5">Statut</dt><dd class="col-7">{% if partner.is_active %}<span class="badge bg-success">Actif</span>{% else %}<span class="badge bg-secondary">Inactif</span>{% endif %}</dd>
         </dl>
         {% if partner.notes %}<hr><p class="mb-0">{{ partner.notes|linebreaks }}</p>{% endif %}

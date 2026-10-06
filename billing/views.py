@@ -12,6 +12,7 @@ from django.views.generic import DeleteView, DetailView, ListView
 from approvals.workflows import get_steps
 from core.pdf import pdf_response
 from dossiers.models import Dossier
+from partners.models import Partner
 
 from .forms import (
     InvoiceForm, InvoiceLineFormSet, PaymentForm, QuoteForm, QuoteLineFormSet, ReminderForm,
@@ -25,7 +26,19 @@ def _form_context(form, formset, instance):
     return {
         "form": form, "formset": formset, "object": instance,
         "taux_par_frais": {str(k): int(v) for k, v in TAUX_TVA_PAR_FRAIS.items()},
+        "clients_exoneres": list(
+            Partner.objects.filter(exonere_tva=True).values_list("pk", flat=True)
+        ),
     }
+
+
+def _notifier_exoneration(request, document):
+    document.appliquer_exoneration_tva()
+    if document.est_exonere_tva and document.lignes.exists():
+        messages.info(
+            request,
+            f"{document.client} est exonéré de TVA : toutes les lignes sont établies à 0 %.",
+        )
 
 
 class QuoteListView(LoginRequiredMixin, ListView):
@@ -72,6 +85,7 @@ class QuoteEditView(LoginRequiredMixin, View):
             formset = QuoteLineFormSet(request.POST, instance=quote)
             if formset.is_valid():
                 formset.save()
+                _notifier_exoneration(request, quote)
                 messages.success(request, "Devis enregistré avec succès.")
                 return redirect("billing:quote_detail", pk=quote.pk)
         else:
@@ -153,6 +167,7 @@ class InvoiceEditView(LoginRequiredMixin, View):
             formset = InvoiceLineFormSet(request.POST, instance=invoice)
             if formset.is_valid():
                 formset.save()
+                _notifier_exoneration(request, invoice)
                 messages.success(request, "Facture enregistrée avec succès.")
                 return redirect("billing:invoice_detail", pk=invoice.pk)
         else:

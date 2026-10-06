@@ -147,6 +147,10 @@
   </tr>
 </table>
 
+{% if doc.est_exonere_tva %}
+<div style="margin-top: 10px;"><b>Exonéré de TVA</b>{% if doc.motif_exoneration %} - {{ doc.motif_exoneration }}{% endif %}</div>
+{% endif %}
+
 <div class="words" style="margin-top: 14px;">
   {{ phrase_montant }} <b>{{ total_lettres|capfirst }}</b>.
 </div>

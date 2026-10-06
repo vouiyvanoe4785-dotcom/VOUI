@@ -69,6 +69,12 @@ class LigneTarifeeMixin(models.Model):
     def montant_ttc(self):
         return self.montant + self.montant_tva
 
+    def save(self, *args, **kwargs):
+        document = getattr(self, self.document_field, None)
+        if document is not None and document.est_exonere_tva:
+            self.taux_tva = TauxTVA.EXONERE
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.designation
 
@@ -79,6 +85,26 @@ class DocumentTarifeMixin:
     VAT is computed per rate on the summed HT amounts (one rounding per rate), the
     way it is presented in the VAT breakdown.
     """
+
+    @property
+    def est_exonere_tva(self):
+        return self.exonere_tva
+
+    def _figer_exoneration_tva(self):
+        """Copy the client's VAT exemption onto the document when it is created or its
+        client changes, so that a later change on the client never rewrites past documents."""
+        if self.pk:
+            ancien_client = type(self).objects.filter(pk=self.pk).values_list("client_id", flat=True).first()
+            if ancien_client == self.client_id:
+                return
+        self.exonere_tva = self.client.exonere_tva
+        self.motif_exoneration = self.client.motif_exoneration if self.exonere_tva else ""
+
+    def appliquer_exoneration_tva(self):
+        """Force every line to 0 % when the client is VAT-exempt; returns the lines changed."""
+        if not self.est_exonere_tva:
+            return 0
+        return self.lignes.exclude(taux_tva=TauxTVA.EXONERE).update(taux_tva=TauxTVA.EXONERE)
 
     @property
     def montant_ht(self):
@@ -135,6 +161,10 @@ class Quote(DocumentTarifeMixin, models.Model):
     date_creation = models.DateField("Date de création", auto_now_add=True)
     date_validite = models.DateField("Valide jusqu'au", null=True, blank=True)
     notes = models.TextField("Notes", blank=True)
+    exonere_tva = models.BooleanField("Exonéré de TVA", default=False, editable=False)
+    motif_exoneration = models.CharField(
+        "Motif de l'exonération", max_length=255, blank=True, editable=False
+    )
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
@@ -153,6 +183,7 @@ class Quote(DocumentTarifeMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self.reference:
             self.reference = generate_reference(Quote, "DV")
+        self._figer_exoneration_tva()
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -162,6 +193,7 @@ class Quote(DocumentTarifeMixin, models.Model):
 
 class QuoteLine(LigneTarifeeMixin):
     quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name="lignes")
+    document_field = "quote"
 
     class Meta(LigneTarifeeMixin.Meta):
         pass
@@ -191,6 +223,10 @@ class Invoice(DocumentTarifeMixin, models.Model):
     date_emission = models.DateField("Date d'émission", auto_now_add=True)
     date_echeance = models.DateField("Date d'échéance", null=True, blank=True)
     notes = models.TextField("Notes / Note de détail", blank=True)
+    exonere_tva = models.BooleanField("Exonéré de TVA", default=False, editable=False)
+    motif_exoneration = models.CharField(
+        "Motif de l'exonération", max_length=255, blank=True, editable=False
+    )
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
@@ -209,6 +245,7 @@ class Invoice(DocumentTarifeMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self.reference:
             self.reference = generate_reference(Invoice, "FA")
+        self._figer_exoneration_tva()
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -230,6 +267,7 @@ class Invoice(DocumentTarifeMixin, models.Model):
 
 class InvoiceLine(LigneTarifeeMixin):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lignes")
+    document_field = "invoice"
 
     class Meta(LigneTarifeeMixin.Meta):
         pass
