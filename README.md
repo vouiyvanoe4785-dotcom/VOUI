@@ -75,7 +75,8 @@ core/         Éléments partagés (numérotation, templates de base, filtres)
 
 ## Déploiement en production
 
-- Définir `DEBUG=False`, un `SECRET_KEY` fort et `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`.
+- Définir `DEBUG=False`, un `SECRET_KEY` fort et `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`. Avec `DEBUG=False`, l'application refuse de démarrer si la clé par défaut du dépôt est encore utilisée. Générer une clé : `python -c "import secrets; print(secrets.token_urlsafe(50))"`.
+- **HTTPS** : avec `DEBUG=False`, les cookies de session et CSRF ne circulent qu'en HTTPS (`HTTPS_ONLY=False` pour un serveur interne en HTTP). Faire la redirection HTTP → HTTPS dans Nginx ou mettre `SECURE_SSL_REDIRECT=True`. Une fois le HTTPS en place durablement, activer HSTS avec `SECURE_HSTS_SECONDS=31536000`. `python manage.py check --deploy` liste ce qui reste à régler.
 - Basculer `DB_ENGINE=postgres` et renseigner les variables `DB_*`.
 - Exécuter `python manage.py collectstatic`.
 - **Récapitulatif des alertes** : définir `SITE_URL` (adresse publique, pour les liens) puis planifier la commande, par exemple du lundi au samedi à 7 h 30 :

@@ -14,6 +14,13 @@ SECRET_KEY = config(
 
 DEBUG = config("DEBUG", default=True, cast=bool)
 
+if not DEBUG and SECRET_KEY.startswith("django-insecure-"):
+    # The default key is public (it is in the repository): session cookies and password
+    # reset links could be forged with it.
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("Définissez une SECRET_KEY propre à ce serveur dans .env (DEBUG=False).")
+
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
 CSRF_TRUSTED_ORIGINS = config(
@@ -197,5 +204,17 @@ PASSWORD_RESET_TIMEOUT = config("PASSWORD_RESET_TIMEOUT", default=60 * 60 * 24, 
 
 # Derrière un reverse proxy HTTPS (Nginx), pour que Django sache que la requête est
 # sécurisée et génère des liens https:// dans les e-mails.
-if config("BEHIND_HTTPS_PROXY", default=False, cast=bool):
+BEHIND_HTTPS_PROXY = config("BEHIND_HTTPS_PROXY", default=False, cast=bool)
+if BEHIND_HTTPS_PROXY:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# HTTPS en production : cookies de session et CSRF uniquement en HTTPS (désactivable
+# avec HTTPS_ONLY=False pour un serveur interne en HTTP), redirection HTTP -> HTTPS si
+# elle n'est pas déjà faite par Nginx, et HSTS sur option (difficile à annuler : ne
+# l'activer qu'une fois le HTTPS en place durablement).
+HTTPS_ONLY = config("HTTPS_ONLY", default=not DEBUG, cast=bool)
+SESSION_COOKIE_SECURE = HTTPS_ONLY
+CSRF_COOKIE_SECURE = HTTPS_ONLY
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False, cast=bool)
