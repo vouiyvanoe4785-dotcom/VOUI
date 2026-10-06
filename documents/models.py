@@ -1,7 +1,13 @@
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from dossiers.models import Dossier
+
+ALLOWED_DOCUMENT_EXTENSIONS = [
+    "pdf", "jpg", "jpeg", "png", "tif", "tiff",
+    "doc", "docx", "xls", "xlsx", "csv", "txt",
+]
 
 
 class TypeDocument(models.TextChoices):
@@ -29,7 +35,10 @@ class Document(models.Model):
         "Type de document", max_length=30, choices=TypeDocument.choices
     )
     libelle = models.CharField("Libellé", max_length=200, blank=True)
-    fichier = models.FileField("Fichier", upload_to=document_upload_path)
+    fichier = models.FileField(
+        "Fichier", upload_to=document_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=ALLOWED_DOCUMENT_EXTENSIONS)],
+    )
     date_document = models.DateField("Date du document", null=True, blank=True)
 
     uploaded_by = models.ForeignKey(

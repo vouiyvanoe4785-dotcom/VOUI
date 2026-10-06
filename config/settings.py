@@ -4,15 +4,25 @@ Django settings for Ayden Transit.
 
 from pathlib import Path
 from decouple import config, Csv
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+_INSECURE_SECRET_KEY_PREFIX = "django-insecure-"
+
 SECRET_KEY = config(
     "SECRET_KEY",
-    default="django-insecure-change-me-in-production-1hg%t*7zemwk1@7qkdfjlx",
+    default=_INSECURE_SECRET_KEY_PREFIX + "change-me-in-production-1hg%t*7zemwk1@7qkdfjlx",
 )
 
-DEBUG = config("DEBUG", default=True, cast=bool)
+# Secure by default: DEBUG must be explicitly enabled (e.g. via .env for local dev).
+DEBUG = config("DEBUG", default=False, cast=bool)
+
+if not DEBUG and SECRET_KEY.startswith(_INSECURE_SECRET_KEY_PREFIX):
+    raise ImproperlyConfigured(
+        "Refusing to start with DEBUG=False and the default SECRET_KEY. "
+        "Set a real SECRET_KEY via the environment before deploying."
+    )
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
