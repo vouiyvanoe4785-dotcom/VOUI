@@ -8,7 +8,7 @@ CACHE_SECONDS = 60
 def alertes(request):
     """Urgent alert count for the navbar bell, cached briefly per user."""
     user = getattr(request, "user", None)
-    if not user or not user.is_authenticated:
+    if not user or not user.is_authenticated or user.is_client_portal:
         return {}
 
     def compter():

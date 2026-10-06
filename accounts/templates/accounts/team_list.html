@@ -13,7 +13,7 @@
         {% for u in users %}
         <tr>
           <td>{{ u.get_full_name|default:u.username }}</td>
-          <td>{{ u.get_role_display }}</td>
+          <td>{{ u.get_role_display }}{% if u.partner %}<div class="small text-muted">{{ u.partner }}</div>{% endif %}</td>
           <td>{{ u.service|default:"-" }}</td>
           <td>{{ u.phone|default:"-" }}</td>
           <td>{{ u.email|default:"-" }}</td>

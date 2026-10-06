@@ -1,0 +1,74 @@
+{% extends "portal/base.html" %}
+{% load ayden_extras %}
+{% block title %}Accueil{% endblock %}
+{% block content %}
+<h3 class="section-title mb-1">Bonjour {{ user.first_name|default:user.username }}</h3>
+<p class="text-muted">Suivez vos opérations de transit et de dédouanement en temps réel.</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-md-4">
+    <div class="card kpi-card"><div class="card-body">
+      <div class="text-muted small">Dossiers en cours</div>
+      <div class="kpi-value">{{ nb_en_cours }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card kpi-card kpi-warning"><div class="card-body">
+      <div class="text-muted small">En douane</div>
+      <div class="kpi-value">{{ nb_en_douane }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card kpi-card {% if solde_du > 0 %}kpi-warning{% else %}kpi-success{% endif %}"><div class="card-body">
+      <div class="text-muted small">Montant à régler</div>
+      <div class="kpi-value">{{ solde_du|floatformat:"2g" }}</div>
+      <div class="text-muted small">MAD · {{ factures_a_regler|length }} facture{{ factures_a_regler|length|pluralize }}</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card h-100"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="section-title mb-0">Dossiers en cours</h6>
+        <a href="{% url 'portal:dossier_list' %}" class="small">Tous mes dossiers <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for d in dossiers_recents %}
+        <a href="{% url 'portal:dossier_detail' d.pk %}" class="list-group-item list-group-item-action px-0 d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">{{ d.reference }}{% if d.reference_client %} <span class="text-muted fw-normal">· {{ d.reference_client }}</span>{% endif %}</div>
+            <div class="small text-muted">{{ d.get_type_operation_display }}{% if d.origine or d.destination %} · {{ d.origine|default:"?" }} → {{ d.destination|default:"?" }}{% endif %}</div>
+          </div>
+          <span class="badge bg-{{ d.statut|status_color }}">{{ d.get_statut_display }}</span>
+        </a>
+        {% empty %}
+        <div class="text-muted py-3">Aucun dossier en cours.</div>
+        {% endfor %}
+      </div>
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card h-100"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="section-title mb-0">Factures à régler</h6>
+        <a href="{% url 'portal:invoice_list' %}" class="small">Toutes les factures <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for f in factures_a_regler %}
+        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+          <div>
+            <a href="{% url 'portal:invoice_pdf' f.pk %}" target="_blank">{{ f.reference }}</a>
+            <div class="small text-muted">{% if f.date_echeance %}Échéance {{ f.date_echeance|date:"d/m/Y" }}{% endif %}</div>
+          </div>
+          <span class="fw-semibold">{{ f.solde|floatformat:"2g" }} MAD</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item px-0 text-muted">Aucune facture en attente de règlement.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

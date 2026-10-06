@@ -8,12 +8,22 @@ class Role(models.TextChoices):
     AGENT_TRANSIT = "agent_transit", "Agent de transit"
     COMPTABLE = "comptable", "Comptable"
     CONSULTATION = "consultation", "Consultation seule"
+    CLIENT = "client", "Client (portail)"
 
 
 class User(AbstractUser):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.AGENT_TRANSIT)
     phone = models.CharField("Téléphone", max_length=30, blank=True)
     service = models.CharField("Service / département", max_length=100, blank=True)
+    partner = models.ForeignKey(
+        "partners.Partner", verbose_name="Société cliente (portail)",
+        on_delete=models.SET_NULL, null=True, blank=True, related_name="comptes_portail",
+        help_text="Uniquement pour le rôle « Client (portail) » : le client ne voit que ses propres dossiers.",
+    )
+
+    @property
+    def is_client_portal(self):
+        return self.role == Role.CLIENT
 
     def is_admin_role(self):
         return self.role == Role.ADMIN or self.is_superuser

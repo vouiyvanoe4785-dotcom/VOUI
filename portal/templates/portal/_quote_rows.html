@@ -1,0 +1,14 @@
+{% load ayden_extras %}
+{% for q in devis %}
+<tr>
+  <td class="fw-semibold">{{ q.reference }}</td>
+  <td>{{ q.get_type_devis_display }}</td>
+  <td>{{ q.date_creation|date:"d/m/Y" }}</td>
+  <td>{{ q.date_validite|date:"d/m/Y"|default:"-" }}</td>
+  <td class="text-end">{{ q.montant_total|floatformat:"2g" }}</td>
+  <td><span class="badge bg-{{ q.statut|status_color }}">{{ q.get_statut_display }}</span></td>
+  <td class="text-end"><a href="{% url 'portal:quote_pdf' q.pk %}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf"></i> PDF</a></td>
+</tr>
+{% empty %}
+<tr><td colspan="7" class="text-center text-muted py-3">Aucun devis.</td></tr>
+{% endfor %}

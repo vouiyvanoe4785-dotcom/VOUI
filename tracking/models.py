@@ -56,6 +56,10 @@ class DossierEvent(models.Model):
         "Nouveau statut", max_length=20, choices=StatutDossier.choices, blank=True
     )
     automatique = models.BooleanField("Généré automatiquement", default=False)
+    visible_client = models.BooleanField(
+        "Visible par le client", default=True,
+        help_text="Affiché sur le portail client. Les notes internes ne le sont jamais.",
+    )
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
@@ -70,6 +74,14 @@ class DossierEvent(models.Model):
 
     def __str__(self):
         return f"{self.dossier.reference} - {self.get_type_evenement_display()}"
+
+    # Hidden from the client portal by default (an internal note never shows).
+    TYPES_INTERNES_PAR_DEFAUT = (TypeEvenement.NOTE, TypeEvenement.INCIDENT)
+
+    def save(self, *args, **kwargs):
+        if self.type_evenement == TypeEvenement.NOTE:
+            self.visible_client = False
+        super().save(*args, **kwargs)
 
     @property
     def icon(self):

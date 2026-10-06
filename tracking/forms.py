@@ -15,7 +15,7 @@ class DossierEventForm(forms.ModelForm):
 
     class Meta:
         model = DossierEvent
-        fields = ["type_evenement", "date_evenement", "lieu", "commentaire"]
+        fields = ["type_evenement", "date_evenement", "lieu", "commentaire", "visible_client"]
         widgets = {
             "type_evenement": forms.Select(attrs={"class": "form-select"}),
             "date_evenement": forms.DateTimeInput(
@@ -24,6 +24,7 @@ class DossierEventForm(forms.ModelForm):
             ),
             "lieu": forms.TextInput(attrs={"class": "form-control", "placeholder": "Port, aéroport, entrepôt..."}),
             "commentaire": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "visible_client": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):

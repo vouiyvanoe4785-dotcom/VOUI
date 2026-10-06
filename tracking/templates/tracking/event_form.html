@@ -16,6 +16,7 @@
         <div class="{% if field.name == 'commentaire' %}col-12{% else %}col-md-6{% endif %}">
           <label class="form-label">{{ field.label }}</label>
           {{ field }}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
           {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
         </div>
         {% endfor %}
@@ -24,4 +25,18 @@
     </form>
   </div>
 </div>
+<script>
+  // Notes and incidents are internal by default; everything else is shown on the client portal.
+  (function () {
+    var type = document.getElementById("id_type_evenement");
+    var visible = document.getElementById("id_visible_client");
+    var internes = ["note", "incident"];
+    function sync() {
+      visible.checked = internes.indexOf(type.value) === -1;
+      visible.disabled = type.value === "note";
+    }
+    type.addEventListener("change", sync);
+    sync();
+  })();
+</script>
 {% endblock %}

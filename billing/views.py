@@ -263,52 +263,58 @@ def _document_context(doc, lignes):
     }
 
 
+def quote_pdf_response(quote, download=False):
+    ctx = _document_context(quote, list(quote.lignes.all()))
+    proforma = quote.type_devis == TypeDevis.PROFORMA
+    infos = [("Date", quote.date_creation.strftime("%d/%m/%Y"))]
+    if quote.date_validite:
+        infos.append(("Valable jusqu'au", quote.date_validite.strftime("%d/%m/%Y")))
+    ctx.update({
+        "titre": quote.get_type_devis_display(),
+        "infos": infos,
+        "phrase_montant": (
+            "Arrêtée la présente facture proforma à la somme de :" if proforma
+            else "Arrêté le présent devis à la somme de :"
+        ),
+        "mentions": ctx["societe"].mentions_devis,
+    })
+    return pdf_response("billing/pdf/document.html", ctx, f"{quote.reference}.pdf", download=download)
+
+
+def invoice_pdf_response(invoice, download=False):
+    ctx = _document_context(invoice, list(invoice.lignes.all()))
+    paiements = list(invoice.paiements.all())
+    paye = sum((p.montant for p in paiements), Decimal("0"))
+    infos = [("Date d'émission", invoice.date_emission.strftime("%d/%m/%Y"))]
+    if invoice.date_echeance:
+        infos.append(("Échéance", invoice.date_echeance.strftime("%d/%m/%Y")))
+    ctx.update({
+        "titre": "Facture",
+        "infos": infos,
+        "phrase_montant": "Arrêtée la présente facture à la somme de :",
+        "note_label": "Note de détail",
+        "mentions": ctx["societe"].mentions_facture,
+        "afficher_reglements": paye > 0,
+        "paiements": paiements,
+        "paye": paye,
+        "solde": ctx["total"] - paye,
+    })
+    return pdf_response("billing/pdf/document.html", ctx, f"{invoice.reference}.pdf", download=download)
+
+
+PDF_QUERYSETS = {
+    "quote": lambda: Quote.objects.select_related("client", "dossier").prefetch_related("lignes"),
+    "invoice": lambda: Invoice.objects.select_related("client", "dossier").prefetch_related("lignes"),
+}
+
+
 class QuotePdfView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        quote = get_object_or_404(
-            Quote.objects.select_related("client", "dossier").prefetch_related("lignes"), pk=pk
-        )
-        ctx = _document_context(quote, list(quote.lignes.all()))
-        infos = [("Date", quote.date_creation.strftime("%d/%m/%Y"))]
-        if quote.date_validite:
-            infos.append(("Valable jusqu'au", quote.date_validite.strftime("%d/%m/%Y")))
-        ctx.update({
-            "titre": quote.get_type_devis_display(),
-            "infos": infos,
-            "phrase_montant": f"Arrêté{'e' if quote.type_devis == TypeDevis.PROFORMA else ''} "
-                              f"{'la présente facture proforma' if quote.type_devis == TypeDevis.PROFORMA else 'le présent devis'} "
-                              "à la somme de :",
-            "mentions": ctx["societe"].mentions_devis,
-        })
-        return pdf_response(
-            "billing/pdf/document.html", ctx, f"{quote.reference}.pdf",
-            download=bool(request.GET.get("download")),
-        )
+        quote = get_object_or_404(PDF_QUERYSETS["quote"](), pk=pk)
+        return quote_pdf_response(quote, download=bool(request.GET.get("download")))
 
 
 class InvoicePdfView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        invoice = get_object_or_404(
-            Invoice.objects.select_related("client", "dossier").prefetch_related("lignes"), pk=pk
-        )
-        ctx = _document_context(invoice, list(invoice.lignes.all()))
-        paiements = list(invoice.paiements.all())
-        paye = sum((p.montant for p in paiements), Decimal("0"))
-        infos = [("Date d'émission", invoice.date_emission.strftime("%d/%m/%Y"))]
-        if invoice.date_echeance:
-            infos.append(("Échéance", invoice.date_echeance.strftime("%d/%m/%Y")))
-        ctx.update({
-            "titre": "Facture",
-            "infos": infos,
-            "phrase_montant": "Arrêtée la présente facture à la somme de :",
-            "note_label": "Note de détail",
-            "mentions": ctx["societe"].mentions_facture,
-            "afficher_reglements": paye > 0,
-            "paiements": paiements,
-            "paye": paye,
-            "solde": ctx["total"] - paye,
-        })
-        return pdf_response(
-            "billing/pdf/document.html", ctx, f"{invoice.reference}.pdf",
-            download=bool(request.GET.get("download")),
-        )
+        invoice = get_object_or_404(PDF_QUERYSETS["invoice"](), pk=pk)
+        return invoice_pdf_response(invoice, download=bool(request.GET.get("download")))
