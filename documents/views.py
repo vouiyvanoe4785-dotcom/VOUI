@@ -1,7 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
+from django.views import View
 from django.views.generic import CreateView, DeleteView
+
+from core.files import serve_file
 
 from dossiers.models import Dossier
 
@@ -42,3 +45,9 @@ class DocumentDeleteView(LoginRequiredMixin, DeleteView):
         self.object.delete()
         messages.success(request, "Document supprimé.")
         return redirect(dossier.get_absolute_url() + "#documents")
+
+
+class DocumentDownloadView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        document = get_object_or_404(Document, pk=pk)
+        return serve_file(document.fichier, document.filename())

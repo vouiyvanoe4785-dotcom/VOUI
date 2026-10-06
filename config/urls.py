@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -22,5 +20,5 @@ urlpatterns = [
     path("", include("billing.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Uploaded files are deliberately not served from MEDIA_URL, not even in development:
+# they go through views that check access (documents:download, portal:document_download).

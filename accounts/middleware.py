@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.shortcuts import redirect
+from django.urls import reverse
 
 PORTAL_PREFIX = "/portail/"
 
@@ -16,6 +17,7 @@ class PortalAccessMiddleware:
         self.client_allowed = (
             PORTAL_PREFIX,
             "/comptes/logout/",
+            reverse("core:logo"),
             "/" + settings.STATIC_URL.lstrip("/"),
         )
 

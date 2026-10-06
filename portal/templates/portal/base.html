@@ -13,7 +13,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark ayden-navbar sticky-top">
   <div class="container px-3">
     <a class="navbar-brand fw-bold" href="{% url 'portal:home' %}">
-      {% if societe.logo %}<img src="{{ societe.logo.url }}" alt="" style="height: 28px;" class="me-1 bg-white rounded p-1">{% else %}<i class="bi bi-truck"></i>{% endif %}
+      {% if societe.logo %}<img src="{% url 'core:logo' %}?v={{ societe.updated_at|date:'U' }}" alt="" style="height: 28px;" class="me-1 bg-white rounded p-1">{% else %}<i class="bi bi-truck"></i>{% endif %}
       {{ societe.raison_sociale }} <span class="fw-normal opacity-75">· Espace client</span>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNav">

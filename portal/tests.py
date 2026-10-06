@@ -75,7 +75,7 @@ class PortalIsolationTests(PortalTestCase):
         checked = 0
         for name, pattern in iter_named_urls():
             # Django admin URLs take non-numeric arguments; "/admin/" is checked below.
-            if name.startswith(("portal:", "admin:")) or name == "accounts:logout":
+            if name.startswith(("portal:", "admin:")) or name in ("accounts:logout", "core:logo"):
                 continue
             kwargs = {key: 1 for key in pattern.regex.groupindex}
             url = reverse(name, kwargs=kwargs)
@@ -133,6 +133,8 @@ class PortalContentTests(PortalTestCase):
         self.assertEqual(resp.context["solde_du"], self.invoice.montant_total)  # draft excluded
         self.assertContains(resp, self.dossier.reference)
         self.assertNotContains(resp, "Équipe")  # no staff navigation
+        # The logo is the only shared URL a client account may load (portal header).
+        self.assertEqual(self.client.get(reverse("core:logo")).status_code, 404)  # not redirected
 
     def test_dossier_timeline_hides_internal_events(self):
         DossierEvent.objects.create(dossier=self.dossier, type_evenement=TypeEvenement.ARRIVEE, commentaire="Navire à quai")

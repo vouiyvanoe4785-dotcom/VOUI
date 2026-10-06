@@ -102,7 +102,7 @@
             <td>{{ doc.get_type_document_display }}</td>
             <td>{{ doc.libelle|default:"-" }}</td>
             <td>{{ doc.date_document|default:"-" }}</td>
-            <td><a href="{{ doc.fichier.url }}" target="_blank"><i class="bi bi-download"></i> {{ doc.filename }}</a></td>
+            <td><a href="{% url 'documents:download' doc.pk %}" target="_blank"><i class="bi bi-download"></i> {{ doc.filename }}</a></td>
             <td class="text-end">
               <form method="post" action="{% url 'documents:delete' doc.pk %}" class="d-inline" onsubmit="return confirm('Supprimer ce document ?');">
                 {% csrf_token %}

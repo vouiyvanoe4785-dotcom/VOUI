@@ -78,4 +78,11 @@ core/         Éléments partagés (numérotation, templates de base, filtres)
 - Basculer `DB_ENGINE=postgres` et renseigner les variables `DB_*`.
 - Exécuter `python manage.py collectstatic`.
 - Servir l'application avec Gunicorn derrière un reverse proxy (Nginx, etc.).
-- **Fichiers téléversés** : ne pas exposer `MEDIA_ROOT` publiquement sur le reverse proxy (les chemins des documents sont prévisibles). Le portail client télécharge les documents via une vue contrôlée ; idéalement, faire de même côté interne ou restreindre `/media/` aux utilisateurs connectés.
+- **Fichiers téléversés** : l'application ne publie jamais `MEDIA_ROOT` ; chaque document passe par une vue qui vérifie l'accès (connexion côté interne, propriété du dossier côté portail). Ne créez **pas** de `location /media/` publique. Pour que Nginx envoie lui-même les fichiers après ce contrôle, définissez `PROTECTED_MEDIA_ACCEL_PREFIX=/protected-media/` et ajoutez :
+
+  ```nginx
+  location /protected-media/ {
+      internal;                      # inaccessible directement depuis l'extérieur
+      alias /chemin/vers/ayden/media/;
+  }
+  ```

@@ -6,13 +6,13 @@ request.user.partner, so a client can never reach another client's data (they ge
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
 from billing.models import Invoice, Quote, StatutDevis, StatutFacture
 from billing.views import PDF_QUERYSETS, invoice_pdf_response, quote_pdf_response
+from core.files import serve_file
 from core.models import Societe
 from documents.models import Document
 from dossiers.models import Dossier, StatutDossier
@@ -108,11 +108,7 @@ class DossierDetailView(ClientPortalMixin, DetailView):
 class DocumentDownloadView(ClientPortalMixin, View):
     def get(self, request, pk):
         document = get_object_or_404(Document, pk=pk, dossier__client=self.partner)
-        try:
-            fichier = document.fichier.open("rb")
-        except FileNotFoundError:
-            raise Http404("Fichier introuvable.")
-        return FileResponse(fichier, as_attachment=True, filename=document.filename())
+        return serve_file(document.fichier, document.filename(), as_attachment=True)
 
 
 class InvoiceListView(ClientPortalMixin, ListView):
