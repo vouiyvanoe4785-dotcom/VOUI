@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from decimal import Decimal
-from io import BytesIO
+from io import BytesIO, StringIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -80,3 +80,19 @@ class RenderPdfTests(TestCase):
 
         self.assertEqual(images(avec_logo), 1)
         self.assertEqual(images(sans_logo), 0)
+
+
+class DemoCommandTests(TestCase):
+    def test_creates_data_and_is_idempotent(self):
+        from django.core.management import call_command
+
+        from dossiers.models import Dossier
+
+        call_command("demo", stdout=StringIO())
+        nb = Dossier.objects.count()
+        self.assertGreater(nb, 0)
+        self.assertTrue(self.client.login(username="admin", password="ayden2026"))
+        self.assertEqual(self.client.get(reverse("dashboard:home")).status_code, 200)
+
+        call_command("demo", stdout=StringIO())
+        self.assertEqual(Dossier.objects.count(), nb)

@@ -29,7 +29,29 @@ Plateforme de gestion centralisée pour les transitaires, commissionnaires en do
 - Frontend : templates Django + Bootstrap 5 (responsive, utilisable sur mobile)
 - Fichiers statiques servis via WhiteNoise
 
-## Démarrage rapide
+## Lancer l'application (le plus simple)
+
+1. Installer Python 3.11 ou plus récent depuis https://www.python.org/downloads/ (sous Windows, cocher **« Add Python to PATH »** pendant l'installation).
+2. Télécharger le projet depuis GitHub (bouton vert **Code → Download ZIP**, en choisissant la branche `claude/transit-logistics-app-2gy3ka`) et le décompresser.
+3. Double-cliquer sur **`lancer.bat`** (Windows) ou lancer **`./lancer.sh`** (Mac / Linux).
+
+Le premier lancement installe tout (quelques minutes), crée la base de données et des **données de démonstration**, puis ouvre le navigateur sur `http://127.0.0.1:8000`. Les lancements suivants sont immédiats et conservent vos données.
+
+Comptes de démonstration (mot de passe **`ayden2026`** pour tous) :
+
+| Identifiant | Rôle |
+|---|---|
+| `admin` | Administrateur (accès complet) |
+| `direction` | Direction |
+| `compta` | Comptable |
+| `agent`, `agent2` | Agents de transit (services Import / Export) |
+| `client` | Client sur le portail (Atlas Industries) |
+
+Pensez à changer ces mots de passe (menu utilisateur → *Changer mon mot de passe*) avant d'y saisir de vraies données. Pour repartir de zéro : arrêter l'application et supprimer le fichier `db.sqlite3`.
+
+L'application tourne sur votre ordinateur : les autres postes du bureau n'y ont pas accès tant qu'elle n'est pas installée sur un serveur (voir *Déploiement en production*).
+
+## Démarrage manuel (développeurs)
 
 ```bash
 python3 -m venv .venv
@@ -39,7 +61,7 @@ pip install -r requirements.txt
 cp .env.example .env   # contient DEBUG=True pour le développement ; ajustez SECRET_KEY, etc.
 
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py demo            # ou : python manage.py createsuperuser
 python manage.py runserver
 ```
 

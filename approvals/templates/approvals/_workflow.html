@@ -42,7 +42,7 @@
       {% endfor %}
     </ul>
     {% else %}
-    <p class="text-muted mb-2">Aucun circuit de validation démarré pour ce dossier.</p>
+    <p class="text-muted mb-2">Aucun circuit de validation démarré.</p>
     <form method="post" action="{% url 'approvals:start' validation_ct_id validation_object_id %}">
       {% csrf_token %}
       <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-play-fill"></i> Démarrer la validation</button>

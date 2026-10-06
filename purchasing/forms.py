@@ -48,12 +48,12 @@ class SupplierPaymentForm(forms.ModelForm):
         model = SupplierPayment
         fields = ["montant", "date_paiement", "mode_paiement", "reference", "compte", "notes"]
         widgets = {
-            "montant": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "montant": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "placeholder": "Montant (MAD)"}),
             "date_paiement": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "mode_paiement": forms.Select(attrs={"class": "form-select"}),
-            "reference": forms.TextInput(attrs={"class": "form-control"}),
+            "reference": forms.TextInput(attrs={"class": "form-control", "placeholder": "Réf. chèque / virement"}),
             "compte": forms.Select(attrs={"class": "form-select"}),
-            "notes": forms.TextInput(attrs={"class": "form-control"}),
+            "notes": forms.TextInput(attrs={"class": "form-control", "placeholder": "Notes (facultatif)"}),
         }
 
     def __init__(self, *args, **kwargs):
