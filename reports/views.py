@@ -67,16 +67,21 @@ class ServiceReportExportView(LoginRequiredMixin, ServiceReportAccessMixin, View
         writer.writerow([
             "Service", "Dossiers ouverts", "CA facturé (MAD)", "CA encaissé (MAD)",
             "Dépenses engagées (MAD)", "Dépenses payées (MAD)", "Résultat (MAD)",
+            "CA facturé HT (MAD)", "TVA collectée (MAD)", "TVA déductible (MAD)", "TVA nette (MAD)",
         ])
         for row in rows:
             writer.writerow([
                 row["service"], row["nb_dossiers"], _money(row["ca_facture"]),
                 _money(row["ca_encaisse"]), _money(row["depenses_engagees"]),
                 _money(row["depenses_payees"]), _money(row["resultat"]),
+                _money(row["ca_ht"]), _money(row["tva_collectee"]),
+                _money(row["tva_deductible"]), _money(row["tva_nette"]),
             ])
         writer.writerow([
             "TOTAL", totaux["nb_dossiers"], _money(totaux["ca_facture"]),
             _money(totaux["ca_encaisse"]), _money(totaux["depenses_engagees"]),
             _money(totaux["depenses_payees"]), _money(totaux["resultat"]),
+            _money(totaux["ca_ht"]), _money(totaux["tva_collectee"]),
+            _money(totaux["tva_deductible"]), _money(totaux["tva_nette"]),
         ])
         return response

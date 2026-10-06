@@ -44,6 +44,7 @@ class PartnerDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["dossiers"] = self.object.dossiers.all()[:10]
         ctx["achats"] = self.object.achats.all()[:10]
+        ctx["comptes_portail"] = self.object.comptes_portail.order_by("username")
         return ctx
 
 

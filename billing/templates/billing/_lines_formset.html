@@ -1,0 +1,100 @@
+{# Line editor shared by the quote and invoice forms. #}
+{{ formset.management_form }}
+<div class="alert alert-warning py-2 small d-none" id="exoneration-alert">
+  <i class="bi bi-info-circle"></i> Ce client est <strong>exonéré de TVA</strong> : toutes les lignes sont établies à 0 %.
+</div>
+<div class="table-responsive">
+  <table class="table table-sm align-middle" id="lines-table">
+    <thead><tr>
+      <th>Type de frais</th><th>Désignation</th><th style="width:100px;">Quantité</th>
+      <th style="width:130px;">Prix unitaire HT</th><th style="width:170px;">TVA</th>
+      <th style="width:120px;" class="text-end">Montant HT</th><th style="width:50px;"></th>
+    </tr></thead>
+    <tbody>
+      {% for line_form in formset %}
+      <tr class="line-row">
+        <td>{{ line_form.type_frais }}{{ line_form.id }}</td>
+        <td>{{ line_form.designation }}{% if line_form.errors %}<div class="text-danger small">{{ line_form.errors }}</div>{% endif %}</td>
+        <td>{{ line_form.quantite }}</td>
+        <td>{{ line_form.prix_unitaire }}</td>
+        <td>{{ line_form.taux_tva }}</td>
+        <td class="text-end line-ht">-</td>
+        <td class="text-center">{% if line_form.instance.pk %}{{ line_form.DELETE }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="5" class="text-end fw-normal">Total HT</th><th class="text-end" id="total-ht">-</th><th></th></tr>
+      <tr><th colspan="5" class="text-end fw-normal">TVA</th><th class="text-end" id="total-tva">-</th><th></th></tr>
+      <tr class="table-light"><th colspan="5" class="text-end">Total TTC</th><th class="text-end" id="total-ttc">-</th><th></th></tr>
+    </tfoot>
+  </table>
+</div>
+{% if formset.non_form_errors %}<div class="text-danger small">{{ formset.non_form_errors }}</div>{% endif %}
+<p class="text-muted small mb-0">Le taux de TVA est proposé selon le type de frais (débours et droits &amp; taxes : 0 %) ; vous pouvez le modifier ligne par ligne.</p>
+{{ taux_par_frais|json_script:"taux-par-frais" }}
+{{ clients_exoneres|json_script:"clients-exoneres" }}
+<script>
+(function () {
+  var taux = JSON.parse(document.getElementById("taux-par-frais").textContent);
+  var exoneres = JSON.parse(document.getElementById("clients-exoneres").textContent).map(String);
+  var clientSelect = document.getElementById("id_client");
+  // An existing document keeps the exemption it was issued with while its client is unchanged.
+  var docClient = "{{ object.client_id|default_if_none:'' }}";
+  var docExonere = {{ object.exonere_tva|yesno:"true,false" }};
+  function clientExonere() {
+    if (!clientSelect) return false;
+    if (docClient && clientSelect.value === docClient) return docExonere;
+    return exoneres.indexOf(clientSelect.value) !== -1;
+  }
+  var fmt = new Intl.NumberFormat("fr-FR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  var rows = document.querySelectorAll("#lines-table .line-row");
+  function field(row, name) { return row.querySelector('[name$="-' + name + '"]'); }
+  function num(input) { var v = parseFloat((input && input.value || "").replace(",", ".")); return isNaN(v) ? 0 : v; }
+
+  function recompute() {
+    var ht = 0, tva = {};
+    rows.forEach(function (row) {
+      var del = field(row, "DELETE");
+      var lineHt = Math.round(num(field(row, "quantite")) * num(field(row, "prix_unitaire")) * 100) / 100;
+      row.querySelector(".line-ht").textContent = fmt.format(lineHt);
+      if (del && del.checked) return;
+      var t = num(field(row, "taux_tva"));
+      ht += lineHt;
+      tva[t] = (tva[t] || 0) + lineHt;
+    });
+    var totalTva = 0;
+    Object.keys(tva).forEach(function (t) { totalTva += Math.round(tva[t] * t) / 100; });
+    document.getElementById("total-ht").textContent = fmt.format(ht);
+    document.getElementById("total-tva").textContent = fmt.format(totalTva);
+    document.getElementById("total-ttc").textContent = fmt.format(ht + totalTva);
+  }
+
+  rows.forEach(function (row) {
+    var type = field(row, "type_frais");
+    type.addEventListener("change", function () {
+      if (type.value in taux && !clientExonere()) { field(row, "taux_tva").value = taux[type.value]; }
+      recompute();
+    });
+  });
+  // Exempt client: every rate is 0 % and locked (also enforced server-side on save).
+  function appliquerExoneration() {
+    var exo = clientExonere();
+    document.getElementById("exoneration-alert").classList.toggle("d-none", !exo);
+    rows.forEach(function (row) {
+      var select = field(row, "taux_tva");
+      if (exo) { select.value = "0"; }
+      select.style.pointerEvents = exo ? "none" : "";
+      select.classList.toggle("bg-light", exo);
+      select.tabIndex = exo ? -1 : 0;
+    });
+    recompute();
+  }
+  if (clientSelect) { clientSelect.addEventListener("change", appliquerExoneration); }
+  appliquerExoneration();
+
+  document.getElementById("lines-table").addEventListener("input", recompute);
+  document.getElementById("lines-table").addEventListener("change", recompute);
+  recompute();
+})();
+</script>

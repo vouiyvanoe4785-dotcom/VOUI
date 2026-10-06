@@ -74,3 +74,16 @@ class DossierViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         new_dossier = Dossier.objects.exclude(pk=self.dossier.pk).get()
         self.assertEqual(new_dossier.created_by, self.user)
+
+
+class PaginationKeepsFiltersTests(TestCase):
+    def test_next_page_link_keeps_filters(self):
+        partner = Partner.objects.create(raison_sociale="ACME")
+        for _ in range(25):
+            Dossier.objects.create(client=partner, type_operation=TypeOperation.IMPORT, statut=StatutDossier.EN_DOUANE)
+        self.client.force_login(User.objects.create_user("agent", password="x"))
+        resp = self.client.get(reverse("dossiers:list"), {"statut": "en_douane", "q": "ACME"})
+        self.assertContains(resp, 'href="?statut=en_douane&amp;q=ACME&amp;page=2"')
+        page2 = self.client.get(reverse("dossiers:list"), {"statut": "en_douane", "q": "ACME", "page": 2})
+        self.assertEqual(len(page2.context["dossiers"]), 5)
+        self.assertContains(page2, 'href="?statut=en_douane&amp;q=ACME&amp;page=1"')

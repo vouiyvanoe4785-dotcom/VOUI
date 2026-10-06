@@ -1,19 +1,68 @@
+import csv
 import datetime
 from decimal import Decimal
+from io import StringIO
 
 from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import Role, User
-from billing.models import Invoice, InvoiceLine, Payment, TypeFrais
+from billing.models import Invoice, InvoiceLine, Payment, StatutFacture, TypeFrais
 from dossiers.models import Dossier, TypeOperation
 from partners.models import Partner, PartnerType
-from purchasing.models import SupplierInvoice, SupplierInvoiceLine, SupplierPayment
+from purchasing.models import StatutAchat, SupplierInvoice, SupplierInvoiceLine, SupplierPayment
 
 from .services import NON_AFFECTE, build_report
 
 
+class VatReportTests(TestCase):
+    def setUp(self):
+        self.today = datetime.date.today()
+        agent = User.objects.create_user("agent", password="x", service="Import")
+        client = Partner.objects.create(raison_sociale="ACME")
+        fournisseur = Partner.objects.create(raison_sociale="Port", type_tiers="prestataire")
+        dossier = Dossier.objects.create(client=client, type_operation=TypeOperation.IMPORT, agent_responsable=agent)
+
+        invoice = Invoice.objects.create(client=client, dossier=dossier, statut=StatutFacture.ENVOYEE)
+        InvoiceLine.objects.create(invoice=invoice, type_frais="honoraires", designation="H", prix_unitaire="2000", taux_tva=20)
+        InvoiceLine.objects.create(invoice=invoice, type_frais="droits_taxes", designation="D", prix_unitaire="5000", taux_tva=0)
+        cancelled = Invoice.objects.create(client=client, dossier=dossier, statut=StatutFacture.ANNULEE)
+        InvoiceLine.objects.create(invoice=cancelled, type_frais="honoraires", designation="H", prix_unitaire="9999", taux_tva=20)
+
+        achat = SupplierInvoice.objects.create(fournisseur=fournisseur, dossier=dossier, statut=StatutAchat.VALIDEE)
+        SupplierInvoiceLine.objects.create(invoice=achat, type_frais="debours", designation="M", prix_unitaire="500", taux_tva=20)
+
+    def test_vat_summary(self):
+        rows, totaux = build_report(self.today, self.today)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["service"], "Import")
+        self.assertEqual(totaux["ca_ht"], 7000)
+        self.assertEqual(totaux["tva_collectee"], 400)
+        self.assertEqual(totaux["tva_deductible"], 100)
+        self.assertEqual(totaux["tva_nette"], 300)
+        self.assertEqual(totaux["ca_facture"], 7400)       # TTC
+        self.assertEqual(totaux["depenses_engagees"], 600)  # TTC
+
+    def test_page_and_csv(self):
+        self.client.force_login(User.objects.create_user("compta", password="x", role=Role.COMPTABLE))
+        params = {"date_debut": self.today.isoformat(), "date_fin": self.today.isoformat()}
+        page = self.client.get(reverse("reports:service_report"), params)
+        self.assertContains(page, "Synthèse TVA")
+        self.assertContains(page, "à reverser")
+
+        export = self.client.get(reverse("reports:service_report_export"), params)
+        lines = list(csv.reader(StringIO(export.content.decode())))
+        self.assertEqual(lines[0][-4:], [
+            "CA facturé HT (MAD)", "TVA collectée (MAD)", "TVA déductible (MAD)", "TVA nette (MAD)",
+        ])
+        self.assertEqual(lines[-1][0], "TOTAL")
+        self.assertEqual(lines[-1][-4:], ["7000.00", "400.00", "100.00", "300.00"])
+
+
 class BuildReportTests(TestCase):
+    """Non-VAT sanity checks: every line is pinned to taux_tva=0 so HT == TTC
+    (VAT math is covered by VatReportTests above)."""
+
     def setUp(self):
         self.client_partner = Partner.objects.create(
             type_tiers=PartnerType.CLIENT, raison_sociale="Atlas Industries"
@@ -46,21 +95,21 @@ class BuildReportTests(TestCase):
         inv1 = Invoice.objects.create(client=self.client_partner, dossier=self.d_import)
         InvoiceLine.objects.create(
             invoice=inv1, type_frais=TypeFrais.HONORAIRES, designation="H", quantite=1,
-            prix_unitaire=Decimal("5000"),
+            prix_unitaire=Decimal("5000"), taux_tva=0,
         )
         Payment.objects.create(invoice=inv1, montant=Decimal("3000"), date_paiement=today)
 
         inv2 = Invoice.objects.create(client=self.client_partner, dossier=self.d_export)
         InvoiceLine.objects.create(
             invoice=inv2, type_frais=TypeFrais.HONORAIRES, designation="H", quantite=1,
-            prix_unitaire=Decimal("2500"),
+            prix_unitaire=Decimal("2500"), taux_tva=0,
         )
         Payment.objects.create(invoice=inv2, montant=Decimal("2500"), date_paiement=today)
 
         inv3 = Invoice.objects.create(client=self.client_partner, dossier=self.d_non_affecte)
         InvoiceLine.objects.create(
             invoice=inv3, type_frais=TypeFrais.HONORAIRES, designation="H", quantite=1,
-            prix_unitaire=Decimal("22000"),
+            prix_unitaire=Decimal("22000"), taux_tva=0,
         )
 
         ach1 = SupplierInvoice.objects.create(
@@ -68,7 +117,7 @@ class BuildReportTests(TestCase):
         )
         SupplierInvoiceLine.objects.create(
             invoice=ach1, type_frais=TypeFrais.TRANSPORT, designation="Fret", quantite=1,
-            prix_unitaire=Decimal("1800"),
+            prix_unitaire=Decimal("1800"), taux_tva=0,
         )
         SupplierPayment.objects.create(invoice=ach1, montant=Decimal("1800"), date_paiement=today)
 

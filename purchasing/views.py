@@ -4,10 +4,19 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import DeleteView, DetailView, ListView
 
+from core.document_forms import save_document_with_lines
 from dossiers.models import Dossier
 
 from .forms import SupplierInvoiceForm, SupplierInvoiceLineFormSet, SupplierPaymentForm
-from .models import StatutAchat, SupplierInvoice
+from .models import TAUX_TVA_ACHAT_PAR_FRAIS, StatutAchat, SupplierInvoice
+
+
+def _form_context(form, formset, instance):
+    return {
+        "form": form, "formset": formset, "object": instance,
+        "taux_par_frais": {str(k): int(v) for k, v in TAUX_TVA_ACHAT_PAR_FRAIS.items()},
+        "clients_exoneres": [],  # VAT exemption only concerns our own invoices
+    }
 
 
 class SupplierInvoiceListView(LoginRequiredMixin, ListView):
@@ -55,25 +64,16 @@ class SupplierInvoiceEditView(LoginRequiredMixin, View):
             initial = {"dossier": dossier.pk}
         form = SupplierInvoiceForm(instance=instance, initial=initial)
         formset = SupplierInvoiceLineFormSet(instance=instance)
-        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+        return render(request, self.template_name, _form_context(form, formset, instance))
 
     def post(self, request, pk=None):
         instance = self.get_instance(pk)
         form = SupplierInvoiceForm(request.POST, instance=instance)
-        formset_instance = instance or SupplierInvoice()
-        if form.is_valid():
-            invoice = form.save(commit=False)
-            if not invoice.created_by_id:
-                invoice.created_by = request.user
-            invoice.save()
-            formset = SupplierInvoiceLineFormSet(request.POST, instance=invoice)
-            if formset.is_valid():
-                formset.save()
-                messages.success(request, "Achat / facture fournisseur enregistré avec succès.")
-                return redirect("purchasing:invoice_detail", pk=invoice.pk)
-        else:
-            formset = SupplierInvoiceLineFormSet(request.POST, instance=formset_instance)
-        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+        invoice, formset = save_document_with_lines(request, form, SupplierInvoiceLineFormSet)
+        if invoice is not None:
+            messages.success(request, "Achat / facture fournisseur enregistré avec succès.")
+            return redirect("purchasing:invoice_detail", pk=invoice.pk)
+        return render(request, self.template_name, _form_context(form, formset, instance))
 
 
 class SupplierInvoiceDeleteView(LoginRequiredMixin, DeleteView):

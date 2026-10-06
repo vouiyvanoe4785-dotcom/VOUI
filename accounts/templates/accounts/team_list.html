@@ -8,19 +8,27 @@
 <div class="card">
   <div class="table-responsive">
     <table class="table table-hover mb-0">
-      <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Service</th><th>Téléphone</th><th>Email</th><th>Actif</th></tr></thead>
+      <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Service</th><th>Téléphone</th><th>Email</th><th>Actif</th><th></th></tr></thead>
       <tbody>
         {% for u in users %}
         <tr>
           <td>{{ u.get_full_name|default:u.username }}</td>
-          <td>{{ u.get_role_display }}</td>
+          <td>{{ u.get_role_display }}{% if u.partner %}<div class="small text-muted">{{ u.partner }}</div>{% endif %}</td>
           <td>{{ u.service|default:"-" }}</td>
           <td>{{ u.phone|default:"-" }}</td>
           <td>{{ u.email|default:"-" }}</td>
           <td>{% if u.is_active %}<span class="badge bg-success">Actif</span>{% else %}<span class="badge bg-secondary">Inactif</span>{% endif %}</td>
+          <td class="text-end">
+            {% if u.is_active and u.email %}
+            <form method="post" action="{% url 'accounts:send_reset_link' u.pk %}" class="d-inline" onsubmit="return confirm('Envoyer un lien de réinitialisation du mot de passe à {{ u.email|escapejs }} ?');">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-secondary" title="Envoyer un lien pour choisir un nouveau mot de passe"><i class="bi bi-envelope"></i> Lien mot de passe</button>
+            </form>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center text-muted py-4">Aucun utilisateur.</td></tr>
+        <tr><td colspan="7" class="text-center text-muted py-4">Aucun utilisateur.</td></tr>
         {% endfor %}
       </tbody>
     </table>
