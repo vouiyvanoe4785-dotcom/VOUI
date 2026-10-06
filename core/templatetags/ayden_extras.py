@@ -60,3 +60,8 @@ def mul(value, arg):
         return value * arg
     except TypeError:
         return ""
+
+
+@register.filter
+def can_delete_event(event, user):
+    return event.can_delete(user)

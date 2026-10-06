@@ -73,3 +73,47 @@ body {
   font-weight: 600;
   color: var(--ayden-navy);
 }
+
+/* Suivi des dossiers : timeline */
+.ayden-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.25rem;
+  position: relative;
+}
+.ayden-timeline > li {
+  position: relative;
+  padding: 0 0 1.1rem 2.75rem;
+}
+.ayden-timeline > li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  top: 2rem;
+  bottom: 0;
+  width: 2px;
+  background: #dee3ea;
+}
+.ayden-timeline > li.tl-empty { padding-left: 0; }
+.ayden-timeline .tl-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ayden-blue);
+  color: #fff;
+}
+.ayden-timeline li.is-auto .tl-icon { background: #8a96a3; }
+.ayden-timeline li.is-incident .tl-icon { background: #dc3545; }
+.ayden-timeline .tl-body {
+  background: #fff;
+  border: 1px solid #e7ebf0;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.85rem;
+}
+.ayden-timeline li.is-incident .tl-body { border-color: #f1aeb5; background: #fff7f8; }

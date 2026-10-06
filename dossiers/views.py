@@ -4,7 +4,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from accounts.models import Role
 from approvals.workflows import get_steps
+from tracking.models import log_status_change
 
 from .forms import DossierForm
 from .models import Dossier, StatutDossier, TypeOperation
@@ -54,6 +56,8 @@ class DossierDetailView(LoginRequiredMixin, DetailView):
         ctx["devis"] = self.object.devis.all()
         ctx["factures"] = self.object.factures.all()
         ctx["achats"] = self.object.achats.all()
+        ctx["evenements"] = self.object.evenements.select_related("created_by")
+        ctx["can_add_event"] = self.request.user.role != Role.CONSULTATION
         ctx["validation_steps"] = get_steps(self.object)
         ctx["validation_ct_id"] = ContentType.objects.get_for_model(Dossier).id
         ctx["validation_object_id"] = self.object.pk
@@ -67,8 +71,10 @@ class DossierCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
+        response = super().form_valid(form)
+        log_status_change(self.object, "", self.request.user, commentaire="Ouverture du dossier")
         messages.success(self.request, "Dossier créé avec succès.")
-        return super().form_valid(form)
+        return response
 
 
 class DossierUpdateView(LoginRequiredMixin, UpdateView):
@@ -77,5 +83,8 @@ class DossierUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "dossiers/dossier_form.html"
 
     def form_valid(self, form):
+        ancien_statut = Dossier.objects.values_list("statut", flat=True).get(pk=self.object.pk)
+        response = super().form_valid(form)
+        log_status_change(self.object, ancien_statut, self.request.user)
         messages.success(self.request, "Dossier mis à jour.")
-        return super().form_valid(form)
+        return response

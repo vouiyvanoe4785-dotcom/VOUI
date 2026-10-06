@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Suivi - {{ dossier.reference }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title"><i class="bi bi-signpost-split"></i> Nouvel événement de suivi</h3>
+  <a href="{{ dossier.get_absolute_url }}#suivi" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Retour au dossier {{ dossier.reference }}</a>
+</div>
+<div class="card">
+  <div class="card-body p-4">
+    <p class="text-muted mb-3">Dossier <strong>{{ dossier.reference }}</strong> &middot; {{ dossier.client }} &middot; statut actuel : <strong>{{ dossier.get_statut_display }}</strong></p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="{% if field.name == 'commentaire' %}col-12{% else %}col-md-6{% endif %}">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-4"><i class="bi bi-check-lg"></i> Enregistrer</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

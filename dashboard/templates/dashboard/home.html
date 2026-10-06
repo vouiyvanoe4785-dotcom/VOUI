@@ -145,4 +145,14 @@
     </div>
   </div>
 </div>
+
+<div class="card mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="section-title mb-0">Activité récente sur les dossiers</h6>
+      <a href="{% url 'tracking:activity' %}" class="small">Tout le suivi <i class="bi bi-arrow-right"></i></a>
+    </div>
+    {% include "tracking/_timeline.html" with evenements=activite_recente show_dossier=True %}
+  </div>
+</div>
 {% endblock %}

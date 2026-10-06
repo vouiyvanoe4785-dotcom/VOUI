@@ -45,7 +45,8 @@
 {% include "approvals/_workflow.html" with steps=validation_steps %}
 
 <ul class="nav nav-tabs" id="dossierTabs" role="tablist">
-  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#marchandises" type="button">Marchandises ({{ marchandises|length }})</button></li>
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#suivi" type="button"><i class="bi bi-signpost-split"></i> Suivi ({{ evenements|length }})</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#marchandises" type="button">Marchandises ({{ marchandises|length }})</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">Documents ({{ documents|length }})</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devis" type="button">Devis ({{ devis|length }})</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#factures" type="button">Factures ({{ factures|length }})</button></li>
@@ -53,7 +54,16 @@
 </ul>
 <div class="tab-content border border-top-0 p-3 bg-white rounded-bottom mb-4">
 
-  <div class="tab-pane fade show active" id="marchandises">
+  <div class="tab-pane fade show active" id="suivi">
+    {% if can_add_event %}
+    <div class="d-flex justify-content-end mb-3">
+      <a href="{% url 'tracking:create' dossier.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Ajouter un événement</a>
+    </div>
+    {% endif %}
+    {% include "tracking/_timeline.html" %}
+  </div>
+
+  <div class="tab-pane fade" id="marchandises">
     <div class="d-flex justify-content-end mb-2">
       <a href="{% url 'cargo:create' dossier.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Ajouter une marchandise</a>
     </div>
@@ -183,4 +193,13 @@
   </div>
 
 </div>
+<script>
+  // Ouvre l'onglet ciblé par l'ancre de l'URL (#documents, #suivi...) après une redirection.
+  document.addEventListener("DOMContentLoaded", function () {
+    var hash = window.location.hash;
+    if (!hash) return;
+    var trigger = document.querySelector('#dossierTabs [data-bs-target="' + hash + '"]');
+    if (trigger) bootstrap.Tab.getOrCreateInstance(trigger).show();
+  });
+</script>
 {% endblock %}

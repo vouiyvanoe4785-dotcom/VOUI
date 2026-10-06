@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "treasury",
     "approvals",
     "reports",
+    "tracking",
     "dashboard",
 ]
 
@@ -135,7 +136,12 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        # Le manifeste (noms hachés) n'existe qu'après collectstatic : on ne l'exige
+        # qu'en production, pour que le serveur de dev et les tests fonctionnent sans.
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
     },
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",

@@ -11,9 +11,12 @@ Plateforme de gestion centralisée pour les transitaires, commissionnaires en do
 - **Documents** : facture commerciale, connaissement (B/L), LTA, CMR, liste de colisage, certificat d'origine, DAU, assurance, autorisations — téléversés et rattachés à chaque dossier.
 - **Devis, proformas & factures** : lignes détaillées par type de frais (honoraires de transit, débours, droits et taxes, acconage, manutention, transport), note de détail par dossier.
 - **Paiements & recouvrement** : enregistrement des paiements (espèces, chèque, virement, effet), suivi du solde, historique des relances clients.
-- **Tableau de bord** : dossiers par statut / type d'opération, dossiers récents, factures impayées, indicateurs clés.
-
-D'autres modules (achats fournisseurs détaillés, caisse multi-comptes, signatures électroniques, rapports avancés par service) sont prévus pour les prochaines itérations.
+- **Tableau de bord** : dossiers par statut / type d'opération, dossiers récents, factures impayées, activité récente, indicateurs clés.
+- **Caisse** : comptes de trésorerie, mouvements détaillés, virements entre caisses.
+- **Achats fournisseurs** : factures fournisseurs rattachées aux dossiers, paiements, dettes.
+- **Validations & signatures** : circuits de validation multi-étapes avec signature électronique.
+- **Rapports par service** : chiffre d'affaires, encaissements et dépenses par service, export CSV.
+- **Suivi des dossiers** : journal chronologique de chaque dossier (ETA, arrivée, déclaration, visite, liquidation, BAE, enlèvement, livraison, incidents, notes internes), historique automatique des changements de statut, fil d'activité global filtrable.
 
 ## Stack technique
 
@@ -38,6 +41,12 @@ python manage.py runserver
 
 L'application est ensuite accessible sur `http://127.0.0.1:8000/`.
 
+Lancer les tests :
+
+```bash
+python manage.py test
+```
+
 ## Structure du projet
 
 ```
@@ -48,6 +57,11 @@ dossiers/     Dossiers de transit (le cœur de l'application)
 cargo/        Marchandises / cargo liées aux dossiers
 documents/    Documents liés aux dossiers (upload de fichiers)
 billing/      Devis, proformas, factures, paiements, relances
+purchasing/   Achats fournisseurs
+treasury/     Caisse et trésorerie
+approvals/    Circuits de validation et signatures
+reports/      Rapports par service
+tracking/     Suivi chronologique des dossiers
 dashboard/    Tableau de bord et indicateurs
 core/         Éléments partagés (numérotation, templates de base, filtres)
 ```
