@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Suivi des opérations - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title mb-0"><i class="bi bi-signpost-split"></i> Suivi des opérations</h3>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3 row g-2 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label small text-muted mb-1">Type d'événement</label>
+      <select name="type" class="form-select">
+        <option value="">Tous</option>
+        {% for value, label in types %}
+        <option value="{{ value }}" {% if value == current_type %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" name="mine" value="1" id="mine" {% if mine %}checked{% endif %}>
+        <label class="form-check-label" for="mine">Uniquement mes dossiers</label>
+      </div>
+    </div>
+    <div class="col-md-3 text-md-end">
+      <button class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrer</button>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-body">
+    {% include "tracking/_timeline.html" with show_dossier=True %}
+  </div>
+</div>
+{% include "core/_pagination.html" %}
+{% endblock %}

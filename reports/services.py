@@ -60,6 +60,9 @@ def build_report(date_debut, date_fin, service=None):
                 "ca_encaisse": Decimal("0"),
                 "depenses_engagees": Decimal("0"),
                 "depenses_payees": Decimal("0"),
+                "ca_ht": Decimal("0"),
+                "tva_collectee": Decimal("0"),
+                "tva_deductible": Decimal("0"),
             }
         return rows[key]
 
@@ -71,25 +74,29 @@ def build_report(date_debut, date_fin, service=None):
         row = get_row(_service_key(agent))
         row["ca_facture"] += invoice.montant_total
         row["ca_encaisse"] += invoice.montant_paye
+        row["ca_ht"] += invoice.montant_ht
+        row["tva_collectee"] += invoice.montant_tva
 
     for achat in achats_qs:
         agent = achat.dossier.agent_responsable if achat.dossier else None
         row = get_row(_service_key(agent))
         row["depenses_engagees"] += achat.montant_total
         row["depenses_payees"] += achat.montant_paye
+        row["tva_deductible"] += achat.montant_tva
 
     for row in rows.values():
         row["resultat"] = row["ca_encaisse"] - row["depenses_payees"]
+        row["tva_nette"] = row["tva_collectee"] - row["tva_deductible"]
 
     ordered_rows = sorted(rows.values(), key=lambda r: r["service"])
 
-    totaux = {
-        "nb_dossiers": sum(r["nb_dossiers"] for r in ordered_rows),
-        "ca_facture": sum((r["ca_facture"] for r in ordered_rows), Decimal("0")),
-        "ca_encaisse": sum((r["ca_encaisse"] for r in ordered_rows), Decimal("0")),
-        "depenses_engagees": sum((r["depenses_engagees"] for r in ordered_rows), Decimal("0")),
-        "depenses_payees": sum((r["depenses_payees"] for r in ordered_rows), Decimal("0")),
-    }
+    totaux = {"nb_dossiers": sum(r["nb_dossiers"] for r in ordered_rows)}
+    for key in (
+        "ca_facture", "ca_encaisse", "depenses_engagees", "depenses_payees",
+        "ca_ht", "tva_collectee", "tva_deductible",
+    ):
+        totaux[key] = sum((r[key] for r in ordered_rows), Decimal("0"))
     totaux["resultat"] = totaux["ca_encaisse"] - totaux["depenses_payees"]
+    totaux["tva_nette"] = totaux["tva_collectee"] - totaux["tva_deductible"]
 
     return ordered_rows, totaux

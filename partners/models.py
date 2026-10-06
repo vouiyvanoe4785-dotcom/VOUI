@@ -24,6 +24,15 @@ class Partner(models.Model):
     adresse = models.CharField("Adresse", max_length=255, blank=True)
     ville = models.CharField("Ville", max_length=100, blank=True)
     pays = models.CharField("Pays", max_length=100, default="Maroc")
+    exonere_tva = models.BooleanField(
+        "Exonéré de TVA", default=False,
+        help_text="Zone franche, prestations liées à l'export, etc. Les factures et devis "
+                  "de ce client sont établis à 0 % de TVA.",
+    )
+    motif_exoneration = models.CharField(
+        "Motif / référence de l'exonération", max_length=255, blank=True,
+        help_text="Imprimé sur les factures, ex. : « Exonération - zone franche, attestation n° ... ».",
+    )
     notes = models.TextField("Notes", blank=True)
     is_active = models.BooleanField("Actif", default=True)
     created_at = models.DateTimeField(auto_now_add=True)

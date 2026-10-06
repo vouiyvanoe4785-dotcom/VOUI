@@ -53,6 +53,9 @@ INSTALLED_APPS = [
     "treasury",
     "approvals",
     "reports",
+    "tracking",
+    "alerts",
+    "portal",
     "dashboard",
 ]
 
@@ -63,6 +66,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accounts.middleware.PortalAccessMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -80,6 +84,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "alerts.context_processors.alertes",
             ],
         },
     },
@@ -145,7 +150,12 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        # Le manifeste (noms hachés) n'existe qu'après collectstatic : on ne l'exige
+        # qu'en production, pour que le serveur de dev et les tests fonctionnent sans.
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
     },
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -161,3 +171,53 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Currency used across quotes/invoices when not overridden per record
 DEFAULT_CURRENCY = config("DEFAULT_CURRENCY", default="MAD")
+
+# Alertes
+ALERTE_DOSSIER_INACTIF_JOURS = config("ALERTE_DOSSIER_INACTIF_JOURS", default=7, cast=int)
+ALERTE_FACTURE_RETARD_CRITIQUE_JOURS = config("ALERTE_FACTURE_RETARD_CRITIQUE_JOURS", default=30, cast=int)
+ALERTE_ECHEANCE_PROCHE_JOURS = config("ALERTE_ECHEANCE_PROCHE_JOURS", default=3, cast=int)
+ALERTE_REPONSE_DEVIS_JOURS = config("ALERTE_REPONSE_DEVIS_JOURS", default=7, cast=int)
+
+# Adresse publique de l'application, pour les liens des e-mails envoyés hors requête
+# (récapitulatif quotidien des alertes).
+SITE_URL = config("SITE_URL", default="http://127.0.0.1:8000").rstrip("/")
+
+# Fichiers téléversés : jamais publiés tels quels. En production derrière Nginx, renseigner
+# le préfixe d'une location `internal` pointant sur MEDIA_ROOT (voir README) pour que Nginx
+# envoie les fichiers après le contrôle d'accès de Django.
+PROTECTED_MEDIA_ACCEL_PREFIX = config("PROTECTED_MEDIA_ACCEL_PREFIX", default="")
+
+# E-mail (réinitialisation des mots de passe, etc.). En développement, les e-mails
+# sont affichés dans la console ; en production, renseigner le serveur SMTP.
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend" if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = config("EMAIL_HOST", default="localhost")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="Ayden Transit <no-reply@localhost>")
+
+# Lien de réinitialisation du mot de passe valable 24 h.
+PASSWORD_RESET_TIMEOUT = config("PASSWORD_RESET_TIMEOUT", default=60 * 60 * 24, cast=int)
+
+# Derrière un reverse proxy HTTPS (Nginx), pour que Django sache que la requête est
+# sécurisée et génère des liens https:// dans les e-mails.
+BEHIND_HTTPS_PROXY = config("BEHIND_HTTPS_PROXY", default=False, cast=bool)
+if BEHIND_HTTPS_PROXY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# HTTPS en production : cookies de session et CSRF uniquement en HTTPS (désactivable
+# avec HTTPS_ONLY=False pour un serveur interne en HTTP), redirection HTTP -> HTTPS si
+# elle n'est pas déjà faite par Nginx, et HSTS sur option (difficile à annuler : ne
+# l'activer qu'une fois le HTTPS en place durablement).
+HTTPS_ONLY = config("HTTPS_ONLY", default=not DEBUG, cast=bool)
+SESSION_COOKIE_SECURE = HTTPS_ONLY
+CSRF_COOKIE_SECURE = HTTPS_ONLY
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False, cast=bool)

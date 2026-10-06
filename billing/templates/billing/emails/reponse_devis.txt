@@ -1,0 +1,12 @@
+{% autoescape off %}{{ quote.client }} a {% if quote.statut == "accepte" %}ACCEPTÉ{% else %}REFUSÉ{% endif %} le {{ quote.get_type_devis_display|lower }} {{ quote.reference }} depuis le portail client.
+
+Signé par : {{ quote.reponse_client_nom }} (compte {{ quote.reponse_client_par.username }})
+Le : {{ quote.reponse_client_le|date:"d/m/Y à H:i" }}
+Montant TTC : {{ quote.montant_total|floatformat:"2g" }} MAD{% if quote.dossier %}
+Dossier : {{ quote.dossier.reference }}{% endif %}{% if quote.reponse_client_commentaire %}
+
+Commentaire du client :
+{{ quote.reponse_client_commentaire }}{% endif %}
+
+Voir le devis : {{ url }}
+{% endautoescape %}

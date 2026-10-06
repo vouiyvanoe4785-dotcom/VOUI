@@ -1,0 +1,15 @@
+{% autoescape off %}Bonjour {{ user.first_name|default:user.username }},
+
+Voici les points à traiter aujourd'hui.
+{% for label, alertes in groupes.items %}
+== {{ label }} ({{ alertes|length }}) ==
+{% for a in alertes %}{% if a.niveau == "danger" %}[URGENT] {% endif %}{{ a.titre }}
+   {{ a.detail }}
+   {{ site_url }}{{ a.url }}
+{% endfor %}{% endfor %}
+Toutes vos alertes : {{ site_url }}{% url 'alerts:list' %}
+
+--
+{{ societe.raison_sociale }}
+Vous recevez cet e-mail car le récapitulatif des alertes est activé sur votre compte. Pour ne plus le recevoir, demandez à un administrateur de le désactiver.
+{% endautoescape %}

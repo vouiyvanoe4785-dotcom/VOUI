@@ -6,5 +6,6 @@ app_name = "documents"
 
 urlpatterns = [
     path("dossier/<int:dossier_pk>/ajouter/", views.DocumentCreateView.as_view(), name="create"),
+    path("<int:pk>/", views.DocumentDownloadView.as_view(), name="download"),
     path("<int:pk>/supprimer/", views.DocumentDeleteView.as_view(), name="delete"),
 ]

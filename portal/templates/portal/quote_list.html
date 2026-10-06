@@ -1,0 +1,14 @@
+{% extends "portal/base.html" %}
+{% block title %}Devis{% endblock %}
+{% block content %}
+<div class="page-header"><h3 class="section-title mb-0"><i class="bi bi-file-earmark-text"></i> Mes devis &amp; proformas</h3></div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Devis</th><th>Type</th><th>Date</th><th>Valable jusqu'au</th><th class="text-end">Total TTC</th><th>Statut</th><th></th></tr></thead>
+      <tbody>{% include "portal/_quote_rows.html" %}</tbody>
+    </table>
+  </div>
+</div>
+{% include "core/_pagination.html" %}
+{% endblock %}

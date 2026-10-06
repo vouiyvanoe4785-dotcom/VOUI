@@ -1,16 +1,11 @@
 from django import forms
 from django.forms import inlineformset_factory
 
+from billing.forms import LINE_FIELDS, LINE_WIDGETS
 from partners.models import PartnerType
 
 from .models import SupplierInvoice, SupplierInvoiceLine, SupplierPayment
 
-LINE_WIDGETS = {
-    "type_frais": forms.Select(attrs={"class": "form-select form-select-sm"}),
-    "designation": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-    "quantite": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
-    "prix_unitaire": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
-}
 
 
 class SupplierInvoiceForm(forms.ModelForm):
@@ -42,7 +37,7 @@ class SupplierInvoiceForm(forms.ModelForm):
 
 SupplierInvoiceLineFormSet = inlineformset_factory(
     SupplierInvoice, SupplierInvoiceLine,
-    fields=["type_frais", "designation", "quantite", "prix_unitaire"],
+    fields=LINE_FIELDS,
     widgets=LINE_WIDGETS,
     extra=1, can_delete=True,
 )

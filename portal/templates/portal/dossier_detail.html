@@ -1,0 +1,109 @@
+{% extends "portal/base.html" %}
+{% load ayden_extras %}
+{% block title %}{{ dossier.reference }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h3 class="section-title mb-0"><i class="bi bi-folder2-open"></i> {{ dossier.reference }}
+      <span class="badge bg-{{ dossier.statut|status_color }}">{{ dossier.get_statut_display }}</span>
+    </h3>
+    <div class="text-muted">{{ dossier.get_type_operation_display }}{% if dossier.reference_client %} · votre référence : {{ dossier.reference_client }}{% endif %}</div>
+  </div>
+  <a href="{% url 'portal:dossier_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Mes dossiers</a>
+</div>
+
+<div class="card mb-3"><div class="card-body py-3">
+  <div class="row g-2">
+    <div class="col-6 col-md-3"><div class="text-muted small">Origine</div><div class="fw-semibold">{{ dossier.origine|default:"-" }}</div></div>
+    <div class="col-6 col-md-3"><div class="text-muted small">Destination</div><div class="fw-semibold">{{ dossier.destination|default:"-" }}</div></div>
+    <div class="col-6 col-md-3"><div class="text-muted small">Régime douanier</div><div class="fw-semibold">{{ dossier.get_regime_douanier_display|default:"-" }}</div></div>
+    <div class="col-6 col-md-3"><div class="text-muted small">Incoterm</div><div class="fw-semibold">{{ dossier.incoterm|default:"-" }}</div></div>
+  </div>
+</div></div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3"><div class="card-body">
+      <h6 class="section-title mb-3"><i class="bi bi-signpost-split"></i> Suivi de l'opération</h6>
+      <ul class="ayden-timeline">
+        {% for ev in evenements %}
+        <li class="{% if ev.automatique %}is-auto{% endif %}">
+          <span class="tl-icon"><i class="bi bi-{{ ev.icon }}"></i></span>
+          <div class="tl-body">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+              <div>
+                {% if ev.nouveau_statut %}
+                  <strong>Statut :</strong> <span class="badge bg-{{ ev.nouveau_statut|status_color }}">{{ ev.get_nouveau_statut_display }}</span>
+                {% else %}
+                  <strong>{{ ev.get_type_evenement_display }}</strong>
+                {% endif %}
+                {% if ev.lieu %}<span class="text-muted small"><i class="bi bi-geo-alt"></i> {{ ev.lieu }}</span>{% endif %}
+              </div>
+              <div class="text-muted small text-nowrap">{{ ev.date_evenement|date:"d/m/Y H:i" }}</div>
+            </div>
+            {% if ev.commentaire and not ev.automatique %}<div class="mt-1">{{ ev.commentaire|linebreaksbr }}</div>{% endif %}
+          </div>
+        </li>
+        {% empty %}
+        <li class="tl-empty text-muted py-3">Aucune étape enregistrée pour le moment.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-body">
+      <h6 class="section-title mb-2"><i class="bi bi-paperclip"></i> Documents</h6>
+      <ul class="list-group list-group-flush">
+        {% for doc in documents %}
+        <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+          <div>
+            <div>{{ doc.get_type_document_display }}</div>
+            <div class="small text-muted">{{ doc.libelle|default:doc.filename }}{% if doc.date_document %} · {{ doc.date_document|date:"d/m/Y" }}{% endif %}</div>
+          </div>
+          <a href="{% url 'portal:document_download' doc.pk %}" class="btn btn-sm btn-outline-primary" title="Télécharger"><i class="bi bi-download"></i></a>
+        </li>
+        {% empty %}
+        <li class="list-group-item px-0 text-muted">Aucun document.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h6 class="section-title mb-2"><i class="bi bi-box-seam"></i> Marchandises</h6>
+      <ul class="list-group list-group-flush">
+        {% for m in marchandises %}
+        <li class="list-group-item px-0">
+          <div class="fw-semibold">{{ m.designation }}</div>
+          <div class="small text-muted">{{ m.quantite }} {{ m.unite }}{% if m.poids_brut %} · {{ m.poids_brut }} kg{% endif %}{% if m.code_hs %} · SH {{ m.code_hs }}{% endif %}</div>
+        </li>
+        {% empty %}
+        <li class="list-group-item px-0 text-muted">Aucune marchandise renseignée.</li>
+        {% endfor %}
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<div class="card mb-3"><div class="card-body">
+  <h6 class="section-title mb-2"><i class="bi bi-receipt"></i> Factures du dossier</h6>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>Facture</th><th>Émise le</th><th>Échéance</th><th class="text-end">Total TTC</th><th class="text-end">Reste dû</th><th>Statut</th><th></th></tr></thead>
+      <tbody>{% include "portal/_invoice_rows.html" %}</tbody>
+    </table>
+  </div>
+</div></div>
+
+{% if devis %}
+<div class="card"><div class="card-body">
+  <h6 class="section-title mb-2"><i class="bi bi-file-earmark-text"></i> Devis du dossier</h6>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0 align-middle">
+      <thead><tr><th>Devis</th><th>Type</th><th>Date</th><th>Valable jusqu'au</th><th class="text-end">Total TTC</th><th>Statut</th><th></th></tr></thead>
+      <tbody>{% include "portal/_quote_rows.html" %}</tbody>
+    </table>
+  </div>
+</div></div>
+{% endif %}
+{% endblock %}

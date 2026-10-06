@@ -1,0 +1,36 @@
+{% load ayden_extras %}
+<ul class="ayden-timeline">
+  {% for ev in evenements %}
+  <li class="{% if ev.is_incident %}is-incident{% elif ev.automatique %}is-auto{% endif %}">
+    <span class="tl-icon"><i class="bi bi-{{ ev.icon }}"></i></span>
+    <div class="tl-body">
+      <div class="d-flex flex-wrap justify-content-between gap-2">
+        <div>
+          {% if show_dossier %}<a href="{{ ev.dossier.get_absolute_url }}#suivi" class="fw-semibold">{{ ev.dossier.reference }}</a> &middot; {% endif %}
+          <strong>{{ ev.get_type_evenement_display }}</strong>
+          {% if ev.nouveau_statut %}
+            {% if ev.ancien_statut %}<span class="badge bg-{{ ev.ancien_statut|status_color }}">{{ ev.get_ancien_statut_display }}</span> <i class="bi bi-arrow-right small"></i>{% endif %}
+            <span class="badge bg-{{ ev.nouveau_statut|status_color }}">{{ ev.get_nouveau_statut_display }}</span>
+          {% endif %}
+          {% if ev.lieu %}<span class="text-muted small"><i class="bi bi-geo-alt"></i> {{ ev.lieu }}</span>{% endif %}
+          {% if not ev.visible_client %}<span class="badge text-bg-light border" title="Non visible sur le portail client"><i class="bi bi-eye-slash"></i> Interne</span>{% endif %}
+        </div>
+        <div class="text-muted small text-nowrap">
+          {{ ev.date_evenement|date:"d/m/Y H:i" }}
+          {% if ev|can_delete_event:user %}
+          <form method="post" action="{% url 'tracking:delete' ev.pk %}" class="d-inline" onsubmit="return confirm('Supprimer cet événement ?');">
+            {% csrf_token %}
+            <button class="btn btn-link btn-sm text-danger p-0 ms-1" title="Supprimer"><i class="bi bi-x-circle"></i></button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% if show_dossier %}<div class="text-muted small">{{ ev.dossier.client }}</div>{% endif %}
+      {% if ev.commentaire %}<div class="mt-1">{{ ev.commentaire|linebreaksbr }}</div>{% endif %}
+      <div class="text-muted small mt-1">{% if ev.created_by %}par {{ ev.created_by }}{% else %}système{% endif %}</div>
+    </div>
+  </li>
+  {% empty %}
+  <li class="tl-empty text-muted py-3">Aucun événement enregistré pour le moment.</li>
+  {% endfor %}
+</ul>

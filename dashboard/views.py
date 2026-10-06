@@ -7,6 +7,8 @@ from billing.models import Invoice, StatutFacture
 from dossiers.models import Dossier, StatutDossier, TypeOperation
 from partners.models import Partner
 from purchasing.models import StatutAchat, SupplierInvoice
+from alerts.services import collect_alertes
+from tracking.models import DossierEvent
 from treasury.models import CashAccount
 
 
@@ -51,5 +53,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ctx["total_dettes_fournisseurs"] = sum(
             (a.solde for a in achats if a.solde > 0), 0
         )
+
+        alertes = collect_alertes(self.request.user)
+        ctx["alertes"] = alertes[:6]
+        ctx["nb_alertes"] = len(alertes)
+
+        ctx["activite_recente"] = DossierEvent.objects.select_related(
+            "dossier", "dossier__client", "created_by"
+        )[:6]
 
         return ctx
