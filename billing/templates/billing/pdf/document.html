@@ -1,0 +1,182 @@
+{# Shared A4 layout for quotes and invoices, rendered by xhtml2pdf (CSS 2.1 subset, tables only). #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>{{ titre }} {{ doc.reference }}</title>
+<style>
+  @page {
+    size: a4 portrait;
+    margin: 1.4cm 1.5cm 2.6cm 1.5cm;
+    @frame footer { -pdf-frame-content: pdf-footer; bottom: 0.8cm; margin-left: 1.5cm; margin-right: 1.5cm; height: 1.5cm; }
+  }
+  body { font-family: Helvetica; font-size: 9pt; color: #1f2933; }
+  p { margin: 0; }
+  table { width: 100%; }
+  td, th { vertical-align: top; }
+  .navy { color: #0b2942; }
+  .muted { color: #6b7785; }
+  .company-name { font-size: 15pt; font-weight: bold; color: #0b2942; }
+  .doc-title { font-size: 20pt; font-weight: bold; color: #1868a8; text-align: right; }
+  .doc-ref { font-size: 11pt; font-weight: bold; text-align: right; }
+  .box { border: 1px solid #d5dbe3; padding: 4px 8px 2px 8px; }
+  .box-title { font-size: 7.5pt; color: #6b7785; text-transform: uppercase; padding-bottom: 1px; }
+  .lines th { background-color: #0b2942; color: #ffffff; padding: 4px 5px 2px 5px; font-weight: bold; text-align: left; }
+  .lines td { padding: 3px 5px 1px 5px; border-bottom: 1px solid #e3e7ec; }
+  .num { text-align: right; }
+  .totals td { padding: 2px 5px 0 5px; }
+  .grand-total td { background-color: #1868a8; color: #ffffff; font-weight: bold; font-size: 10.5pt; padding: 4px 5px 2px 5px; }
+  .words { border-left: 3px solid #1868a8; padding: 4px 8px 2px 8px; background-color: #f4f6f9; }
+  .mentions { font-size: 8pt; color: #4b5563; }
+  #pdf-footer { font-size: 7.5pt; color: #6b7785; text-align: center; border-top: 1px solid #d5dbe3; padding-top: 4px; }
+</style>
+</head>
+<body>
+
+<table>
+  <tr>
+    <td style="width: 55%;">
+      {% if societe.logo %}<img src="{{ societe.logo.url }}" style="height: 55px;"><br>{% endif %}
+      <span class="company-name">{{ societe.raison_sociale }}</span><br>
+      {% if societe.activite %}<span class="muted">{{ societe.activite }}</span><br>{% endif %}
+      {% if societe.adresse %}{{ societe.adresse }}<br>{% endif %}
+      {% if societe.ville %}{{ societe.ville }}{% if societe.pays %}, {{ societe.pays }}{% endif %}<br>{% endif %}
+      {% if societe.telephone %}Tél. : {{ societe.telephone }}{% endif %}{% if societe.telephone and societe.email %} - {% endif %}{% if societe.email %}{{ societe.email }}{% endif %}
+    </td>
+    <td style="width: 45%;">
+      <div class="doc-title">{{ titre|upper }}</div>
+      <div class="doc-ref">N° {{ doc.reference }}</div>
+      {% if infos %}
+      <table style="margin-top: 6px;">
+        {% for label, value in infos %}
+        <tr><td class="muted num" style="width: 55%;">{{ label }}</td><td class="num"><b>{{ value }}</b></td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<table style="margin-top: 14px;">
+  <tr>
+    <td style="width: 48%;" class="box">
+      <div class="box-title">{% if dossier %}Dossier{% else %}Objet{% endif %}</div>
+      {% if dossier %}
+        <b>{{ dossier.reference }}</b> - {{ dossier.get_type_operation_display }}<br>
+        {% if dossier.reference_client %}Réf. client : {{ dossier.reference_client }}<br>{% endif %}
+        {% if dossier.regime_douanier %}Régime : {{ dossier.get_regime_douanier_display }}<br>{% endif %}
+        {% if dossier.incoterm %}Incoterm : {{ dossier.incoterm }}<br>{% endif %}
+        {% if dossier.origine or dossier.destination %}{{ dossier.origine|default:"-" }} &gt; {{ dossier.destination|default:"-" }}{% endif %}
+      {% else %}
+        Prestations de transit et de logistique
+      {% endif %}
+    </td>
+    <td style="width: 4%;"></td>
+    <td style="width: 48%;" class="box">
+      <div class="box-title">Client</div>
+      <b>{{ client.raison_sociale }}</b><br>
+      {% if client.contact_principal %}À l'attention de {{ client.contact_principal }}<br>{% endif %}
+      {% if client.adresse %}{{ client.adresse }}<br>{% endif %}
+      {% if client.ville %}{{ client.ville }}{% if client.pays %}, {{ client.pays }}{% endif %}<br>{% endif %}
+      {% if client.ice %}ICE : {{ client.ice }}{% endif %}
+    </td>
+  </tr>
+</table>
+
+<table class="lines" style="margin-top: 16px;" repeat="1">
+  <thead>
+    <tr>
+      <th style="width: 20%;">Type de frais</th>
+      <th style="width: 37%;">Désignation</th>
+      <th style="width: 8%;" class="num">Qté</th>
+      <th style="width: 17%;" class="num">P.U. ({{ devise }})</th>
+      <th style="width: 18%;" class="num">Montant ({{ devise }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lignes %}
+    <tr>
+      <td>{{ line.get_type_frais_display }}</td>
+      <td>{{ line.designation }}</td>
+      <td class="num">{{ line.quantite|floatformat:"-2" }}</td>
+      <td class="num">{{ line.prix_unitaire|floatformat:"2g" }}</td>
+      <td class="num">{{ line.montant|floatformat:"2g" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="muted">Aucune ligne.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<table style="margin-top: 10px;">
+  <tr>
+    <td style="width: 52%;">
+      {% if sous_totaux|length > 1 %}
+      <table class="totals">
+        <tr><td colspan="2" class="box-title">Récapitulatif par type de frais</td></tr>
+        {% for label, montant in sous_totaux %}
+        <tr><td>{{ label }}</td><td class="num">{{ montant|floatformat:"2g" }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </td>
+    <td style="width: 6%;"></td>
+    <td style="width: 42%;">
+      <table class="totals">
+        <tr class="grand-total"><td>Total</td><td class="num">{{ total|floatformat:"2g" }} {{ devise }}</td></tr>
+        {% if afficher_reglements %}
+        <tr><td>Déjà réglé</td><td class="num">{{ paye|floatformat:"2g" }} {{ devise }}</td></tr>
+        <tr><td><b>Reste à payer</b></td><td class="num"><b>{{ solde|floatformat:"2g" }} {{ devise }}</b></td></tr>
+        {% endif %}
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div class="words" style="margin-top: 14px;">
+  {{ phrase_montant }} <b>{{ total_lettres|capfirst }}</b>.
+</div>
+
+{% if doc.notes %}
+<div style="margin-top: 12px;"><b>{% if note_label %}{{ note_label }}{% else %}Notes{% endif %} :</b><br>{{ doc.notes|linebreaksbr }}</div>
+{% endif %}
+
+{% if afficher_reglements and paiements %}
+<div style="margin-top: 12px;">
+  <b>Règlements reçus</b>
+  <table class="lines" style="margin-top: 4px;">
+    <tr><th>Date</th><th>Mode</th><th>Référence</th><th class="num">Montant ({{ devise }})</th></tr>
+    {% for p in paiements %}
+    <tr><td>{{ p.date_paiement|date:"d/m/Y" }}</td><td>{{ p.get_mode_paiement_display }}</td><td>{{ p.reference|default:"-" }}</td><td class="num">{{ p.montant|floatformat:"2g" }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<table style="margin-top: 16px;">
+  <tr>
+    <td style="width: 58%;" class="mentions">
+      {% if societe.banque or societe.rib %}
+      <b>Coordonnées bancaires</b><br>
+      {% if societe.banque %}{{ societe.banque }}<br>{% endif %}
+      {% if societe.rib %}RIB : {{ societe.rib }}<br>{% endif %}
+      <br>
+      {% endif %}
+      {% if mentions %}{{ mentions|linebreaksbr }}{% endif %}
+    </td>
+    <td style="width: 42%; text-align: center;">
+      <div class="muted">Cachet et signature</div>
+      <div style="height: 45px;"></div>
+    </td>
+  </tr>
+</table>
+
+<div id="pdf-footer">
+  {{ societe.raison_sociale }}{% if societe.adresse %} - {{ societe.adresse }}{% endif %}{% if societe.ville %}, {{ societe.ville }}{% endif %}<br>
+  {{ societe.mentions_legales }}
+  {% if societe.site_web %} - {{ societe.site_web }}{% endif %}
+  &nbsp;&middot;&nbsp; Page <pdf:pagenumber> / <pdf:pagecount>
+</div>
+
+</body>
+</html>

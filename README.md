@@ -10,6 +10,7 @@ Plateforme de gestion centralisée pour les transitaires, commissionnaires en do
 - **Marchandises / cargo** : désignation, code SH/HS indicatif, quantité, colisage, poids, valeur déclarée, origine.
 - **Documents** : facture commerciale, connaissement (B/L), LTA, CMR, liste de colisage, certificat d'origine, DAU, assurance, autorisations — téléversés et rattachés à chaque dossier.
 - **Devis, proformas & factures** : lignes détaillées par type de frais (honoraires de transit, débours, droits et taxes, acconage, manutention, transport), note de détail par dossier.
+- **Impression PDF** : devis, proformas et factures en PDF (A4) avec en-tête de la société, logo, mentions légales (ICE, RC, IF...), RIB, récapitulatif par type de frais, montant en toutes lettres et, pour les factures, règlements reçus et reste à payer. Les informations de la société se règlent dans *Société (en-tête PDF)* (administrateurs).
 - **Paiements & recouvrement** : enregistrement des paiements (espèces, chèque, virement, effet), suivi du solde, historique des relances clients.
 - **Tableau de bord** : dossiers par statut / type d'opération, dossiers récents, factures impayées, activité récente, indicateurs clés.
 - **Caisse** : comptes de trésorerie, mouvements détaillés, virements entre caisses.

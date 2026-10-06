@@ -43,6 +43,9 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><span class="dropdown-item-text text-muted small">{{ user.get_role_display }}</span></li>
+            {% if user.is_admin_role %}
+            <li><a class="dropdown-item" href="{% url 'core:societe' %}"><i class="bi bi-building"></i> Société (en-tête PDF)</a></li>
+            {% endif %}
             <li><hr class="dropdown-divider"></li>
             <li>
               <form method="post" action="{% url 'accounts:logout' %}">

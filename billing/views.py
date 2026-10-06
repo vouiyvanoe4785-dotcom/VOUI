@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -7,12 +10,13 @@ from django.views import View
 from django.views.generic import DeleteView, DetailView, ListView
 
 from approvals.workflows import get_steps
+from core.pdf import pdf_response
 from dossiers.models import Dossier
 
 from .forms import (
     InvoiceForm, InvoiceLineFormSet, PaymentForm, QuoteForm, QuoteLineFormSet, ReminderForm,
 )
-from .models import Invoice, Payment, Quote, Reminder, StatutFacture
+from .models import Invoice, Payment, Quote, Reminder, StatutFacture, TypeDevis
 
 
 class QuoteListView(LoginRequiredMixin, ListView):
@@ -208,3 +212,73 @@ class ReminderCreateView(LoginRequiredMixin, View):
         else:
             messages.error(request, "Erreur dans le formulaire de relance.")
         return redirect("billing:invoice_detail", pk=invoice_pk)
+
+
+def _document_context(doc, lignes):
+    from core.amounts import montant_en_lettres
+    from core.models import Societe
+
+    devise = settings.DEFAULT_CURRENCY
+    totaux = {}
+    for line in lignes:
+        label = line.get_type_frais_display()
+        totaux[label] = totaux.get(label, 0) + line.montant
+    total = sum((line.montant for line in lignes), Decimal("0"))
+    return {
+        "doc": doc,
+        "societe": Societe.load(),
+        "client": doc.client,
+        "dossier": doc.dossier,
+        "lignes": lignes,
+        "sous_totaux": list(totaux.items()),
+        "total": total,
+        "total_lettres": montant_en_lettres(total, devise),
+        "devise": devise,
+    }
+
+
+class QuotePdfView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        quote = get_object_or_404(Quote.objects.select_related("client", "dossier"), pk=pk)
+        ctx = _document_context(quote, list(quote.lignes.all()))
+        infos = [("Date", quote.date_creation.strftime("%d/%m/%Y"))]
+        if quote.date_validite:
+            infos.append(("Valable jusqu'au", quote.date_validite.strftime("%d/%m/%Y")))
+        ctx.update({
+            "titre": quote.get_type_devis_display(),
+            "infos": infos,
+            "phrase_montant": f"Arrêté{'e' if quote.type_devis == TypeDevis.PROFORMA else ''} "
+                              f"{'la présente facture proforma' if quote.type_devis == TypeDevis.PROFORMA else 'le présent devis'} "
+                              "à la somme de :",
+            "mentions": ctx["societe"].mentions_devis,
+        })
+        return pdf_response(
+            "billing/pdf/document.html", ctx, f"{quote.reference}.pdf",
+            download=bool(request.GET.get("download")),
+        )
+
+
+class InvoicePdfView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        invoice = get_object_or_404(Invoice.objects.select_related("client", "dossier"), pk=pk)
+        ctx = _document_context(invoice, list(invoice.lignes.all()))
+        paiements = list(invoice.paiements.all())
+        paye = sum((p.montant for p in paiements), Decimal("0"))
+        infos = [("Date d'émission", invoice.date_emission.strftime("%d/%m/%Y"))]
+        if invoice.date_echeance:
+            infos.append(("Échéance", invoice.date_echeance.strftime("%d/%m/%Y")))
+        ctx.update({
+            "titre": "Facture",
+            "infos": infos,
+            "phrase_montant": "Arrêtée la présente facture à la somme de :",
+            "note_label": "Note de détail",
+            "mentions": ctx["societe"].mentions_facture,
+            "afficher_reglements": paye > 0,
+            "paiements": paiements,
+            "paye": paye,
+            "solde": ctx["total"] - paye,
+        })
+        return pdf_response(
+            "billing/pdf/document.html", ctx, f"{invoice.reference}.pdf",
+            download=bool(request.GET.get("download")),
+        )
