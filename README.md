@@ -11,6 +11,7 @@ Plateforme de gestion centralisée pour les transitaires, commissionnaires en do
 - **Documents** : facture commerciale, connaissement (B/L), LTA, CMR, liste de colisage, certificat d'origine, DAU, assurance, autorisations — téléversés et rattachés à chaque dossier.
 - **Devis, proformas & factures** : lignes détaillées par type de frais (honoraires de transit, débours, droits et taxes, acconage, manutention, transport), note de détail par dossier.
 - **TVA** : taux par ligne (0, 7, 10, 14, 20 %) proposé selon le type de frais (honoraires, acconage, manutention : 20 % ; transport : 14 % ; débours, droits et taxes : 0 %), totaux HT / TVA / TTC et ventilation par taux ; le solde dû est calculé sur le TTC. Un client peut être marqué *exonéré de TVA* (zone franche, export...) avec le motif à imprimer : ses devis et factures sont établis à 0 % et portent la mention d'exonération. L'exonération est figée sur chaque document à sa création, pour qu'un changement ultérieur sur la fiche client ne modifie pas les factures déjà émises.
+- **Alertes** : centre d'alertes (cloche dans la barre de navigation + bloc « À traiter en priorité » au tableau de bord) recalculé en continu : factures échues impayées (critiques au-delà de 30 jours), incidents ouverts sur les dossiers, dossiers sans activité depuis 7 jours, devis envoyés expirés ou sur le point d'expirer, factures fournisseurs à payer (comptabilité/direction), validations en attente pour son rôle. Filtres par catégorie et « mes dossiers ». Seuils réglables dans `.env` (`ALERTE_*`).
 - **Impression PDF** : devis, proformas et factures en PDF (A4) avec en-tête de la société, logo, mentions légales (ICE, RC, IF...), RIB, récapitulatif par type de frais, montant en toutes lettres et, pour les factures, règlements reçus et reste à payer. Les informations de la société se règlent dans *Société (en-tête PDF)* (administrateurs).
 - **Paiements & recouvrement** : enregistrement des paiements (espèces, chèque, virement, effet), suivi du solde, historique des relances clients.
 - **Tableau de bord** : dossiers par statut / type d'opération, dossiers récents, factures impayées, activité récente, indicateurs clés.
@@ -64,6 +65,7 @@ treasury/     Caisse et trésorerie
 approvals/    Circuits de validation et signatures
 reports/      Rapports par service
 tracking/     Suivi chronologique des dossiers
+alerts/       Alertes calculées (échéances, incidents, inactivité, validations)
 dashboard/    Tableau de bord et indicateurs
 core/         Éléments partagés (numérotation, templates de base, filtres)
 ```

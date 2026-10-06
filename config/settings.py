@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "approvals",
     "reports",
     "tracking",
+    "alerts",
     "dashboard",
 ]
 
@@ -71,6 +72,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "alerts.context_processors.alertes",
             ],
         },
     },
@@ -157,3 +159,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Currency used across quotes/invoices when not overridden per record
 DEFAULT_CURRENCY = config("DEFAULT_CURRENCY", default="MAD")
+
+# Alertes
+ALERTE_DOSSIER_INACTIF_JOURS = config("ALERTE_DOSSIER_INACTIF_JOURS", default=7, cast=int)
+ALERTE_FACTURE_RETARD_CRITIQUE_JOURS = config("ALERTE_FACTURE_RETARD_CRITIQUE_JOURS", default=30, cast=int)
+ALERTE_ECHEANCE_PROCHE_JOURS = config("ALERTE_ECHEANCE_PROCHE_JOURS", default=3, cast=int)

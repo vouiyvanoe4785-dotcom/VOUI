@@ -1,0 +1,16 @@
+<div class="list-group list-group-flush">
+  {% for a in alertes %}
+  <a href="{{ a.url }}" class="list-group-item list-group-item-action d-flex gap-3 align-items-start px-2">
+    <span class="alert-dot bg-{{ a.niveau }}"><i class="bi bi-{{ a.icon }}"></i></span>
+    <div class="flex-grow-1">
+      <div class="d-flex flex-wrap justify-content-between gap-2">
+        <span class="fw-semibold">{{ a.titre }}</span>
+        <span class="badge text-bg-light border">{{ a.categorie_label }}</span>
+      </div>
+      <div class="small text-muted">{{ a.detail }}</div>
+    </div>
+  </a>
+  {% empty %}
+  <div class="text-muted py-3"><i class="bi bi-check-circle text-success"></i> Aucune alerte : tout est à jour.</div>
+  {% endfor %}
+</div>

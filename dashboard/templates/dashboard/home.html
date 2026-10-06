@@ -7,6 +7,18 @@
   <span class="text-muted">Bienvenue, {{ user.get_full_name|default:user.username }}</span>
 </div>
 
+{% if alertes %}
+<div class="card mb-4 border-start border-4 border-{{ alertes.0.niveau }}">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="section-title mb-0"><i class="bi bi-bell"></i> À traiter en priorité</h6>
+      <a href="{% url 'alerts:list' %}" class="small">Toutes les alertes ({{ nb_alertes }}) <i class="bi bi-arrow-right"></i></a>
+    </div>
+    {% include "alerts/_alert_items.html" %}
+  </div>
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
     <div class="card kpi-card">

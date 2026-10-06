@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Alertes - Ayden Transit{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h3 class="section-title mb-0"><i class="bi bi-bell"></i> Alertes <span class="badge bg-secondary">{{ total }}</span></h3>
+  <div class="form-check">
+    <form method="get" id="mine-form">
+      {% if current_categorie %}<input type="hidden" name="categorie" value="{{ current_categorie }}">{% endif %}
+      <input class="form-check-input" type="checkbox" name="mine" value="1" id="mine" {% if mine %}checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label" for="mine">Uniquement mes dossiers</label>
+    </form>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <a href="?{% if mine %}mine=1{% endif %}" class="btn btn-sm {% if not current_categorie %}btn-primary{% else %}btn-outline-secondary{% endif %}">Toutes ({{ total }})</a>
+  {% for key, label, count, icon in categories %}
+  <a href="?categorie={{ key }}{% if mine %}&amp;mine=1{% endif %}" class="btn btn-sm {% if current_categorie == key %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    <i class="bi bi-{{ icon }}"></i> {{ label }} ({{ count }})
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-body">
+    {% include "alerts/_alert_items.html" %}
+  </div>
+</div>
+<p class="text-muted small mt-2">Les alertes sont recalculées en continu : elles disparaissent d'elles-mêmes quand la situation est réglée (facture payée, événement ajouté au suivi, devis accepté...).</p>
+{% endblock %}
