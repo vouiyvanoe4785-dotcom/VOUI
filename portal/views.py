@@ -3,19 +3,23 @@
 Every queryset goes through ClientPortalMixin's helpers, which filter on
 request.user.partner, so a client can never reach another client's data (they get a 404).
 """
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
 from billing.models import Invoice, Quote, StatutDevis, StatutFacture
+from billing.quote_response import ReponseImpossible, repondre_devis
 from billing.views import PDF_QUERYSETS, invoice_pdf_response, quote_pdf_response
 from core.files import serve_file
 from core.models import Societe
 from documents.models import Document
 from dossiers.models import Dossier, StatutDossier
+
+from .forms import ReponseDevisForm
 
 FACTURES_MASQUEES = (StatutFacture.BROUILLON, StatutFacture.ANNULEE)
 DEVIS_MASQUES = (StatutDevis.BROUILLON,)
@@ -63,6 +67,10 @@ class HomeView(ClientPortalMixin, TemplateView):
             "factures_a_regler": a_regler,
             "solde_du": sum((f.solde for f in a_regler), 0),
             "dossiers_recents": en_cours.order_by("-updated_at")[:6],
+            "devis_a_valider": [
+                q for q in self.devis(Quote.objects.filter(statut=StatutDevis.ENVOYE).prefetch_related("lignes"))
+                if q.peut_repondre_client
+            ],
         })
         return ctx
 
@@ -129,6 +137,42 @@ class QuoteListView(ClientPortalMixin, ListView):
 
     def get_queryset(self):
         return self.devis(Quote.objects.select_related("dossier").prefetch_related("lignes"))
+
+
+class QuoteDetailView(ClientPortalMixin, DetailView):
+    """Quote summary; a POST records the client's acceptance or refusal."""
+
+    template_name = "portal/quote_detail.html"
+    context_object_name = "quote"
+
+    def get_queryset(self):
+        return self.devis(Quote.objects.select_related("dossier").prefetch_related("lignes"))
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.setdefault("form", ReponseDevisForm(initial={"nom": self.request.user.get_full_name()}))
+        return ctx
+
+    def post(self, request, pk):
+        self.object = self.get_object()
+        form = ReponseDevisForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+        accepte = form.cleaned_data["decision"] == "accepter"
+        try:
+            repondre_devis(
+                request, self.object.pk, self.partner, accepte,
+                form.cleaned_data["nom"], form.cleaned_data["commentaire"],
+            )
+        except ReponseImpossible as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                "Merci, votre accord a bien été enregistré. Nous lançons l'opération."
+                if accepte else "Votre refus a bien été enregistré. Nous reviendrons vers vous.",
+            )
+        return redirect("portal:quote_detail", pk=self.object.pk)
 
 
 class InvoicePdfView(ClientPortalMixin, View):

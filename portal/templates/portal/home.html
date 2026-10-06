@@ -5,6 +5,22 @@
 <h3 class="section-title mb-1">Bonjour {{ user.first_name|default:user.username }}</h3>
 <p class="text-muted">Suivez vos opérations de transit et de dédouanement en temps réel.</p>
 
+{% if devis_a_valider %}
+<div class="card mb-4 border-start border-4 border-warning">
+  <div class="card-body">
+    <h6 class="section-title mb-2"><i class="bi bi-pen"></i> Devis en attente de votre réponse</h6>
+    <div class="list-group list-group-flush">
+      {% for q in devis_a_valider %}
+      <a href="{% url 'portal:quote_detail' q.pk %}" class="list-group-item list-group-item-action px-0 d-flex justify-content-between align-items-center">
+        <span><span class="fw-semibold">{{ q.reference }}</span> <span class="text-muted small">· {{ q.get_type_devis_display }}{% if q.date_validite %} · valable jusqu'au {{ q.date_validite|date:"d/m/Y" }}{% endif %}</span></span>
+        <span class="fw-semibold">{{ q.montant_total|floatformat:"2g" }} MAD <i class="bi bi-chevron-right"></i></span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
   <div class="col-12 col-md-4">
     <div class="card kpi-card"><div class="card-body">

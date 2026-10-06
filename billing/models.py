@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 from core.numbering import generate_reference
 from dossiers.models import Dossier
@@ -161,6 +162,15 @@ class Quote(DocumentTarifeMixin, models.Model):
     date_creation = models.DateField("Date de création", auto_now_add=True)
     date_validite = models.DateField("Valide jusqu'au", null=True, blank=True)
     notes = models.TextField("Notes", blank=True)
+
+    # Réponse du client depuis le portail
+    reponse_client_le = models.DateTimeField("Réponse du client le", null=True, blank=True, editable=False)
+    reponse_client_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name="Réponse du client par", on_delete=models.SET_NULL,
+        null=True, blank=True, editable=False, related_name="devis_repondus",
+    )
+    reponse_client_nom = models.CharField("Signé par", max_length=150, blank=True, editable=False)
+    reponse_client_commentaire = models.TextField("Commentaire du client", blank=True, editable=False)
     exonere_tva = models.BooleanField("Exonéré de TVA", default=False, editable=False)
     motif_exoneration = models.CharField(
         "Motif de l'exonération", max_length=255, blank=True, editable=False
@@ -188,6 +198,15 @@ class Quote(DocumentTarifeMixin, models.Model):
 
     def get_absolute_url(self):
         return reverse("billing:quote_detail", kwargs={"pk": self.pk})
+
+    @property
+    def est_expire(self):
+        return bool(self.date_validite and self.date_validite < timezone.localdate())
+
+    @property
+    def peut_repondre_client(self):
+        """A client can answer a quote that was sent to them and is still valid."""
+        return self.statut == StatutDevis.ENVOYE and not self.est_expire
 
 
 

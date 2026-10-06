@@ -166,6 +166,7 @@ DEFAULT_CURRENCY = config("DEFAULT_CURRENCY", default="MAD")
 ALERTE_DOSSIER_INACTIF_JOURS = config("ALERTE_DOSSIER_INACTIF_JOURS", default=7, cast=int)
 ALERTE_FACTURE_RETARD_CRITIQUE_JOURS = config("ALERTE_FACTURE_RETARD_CRITIQUE_JOURS", default=30, cast=int)
 ALERTE_ECHEANCE_PROCHE_JOURS = config("ALERTE_ECHEANCE_PROCHE_JOURS", default=3, cast=int)
+ALERTE_REPONSE_DEVIS_JOURS = config("ALERTE_REPONSE_DEVIS_JOURS", default=7, cast=int)
 
 # Fichiers téléversés : jamais publiés tels quels. En production derrière Nginx, renseigner
 # le préfixe d'une location `internal` pointant sur MEDIA_ROOT (voir README) pour que Nginx

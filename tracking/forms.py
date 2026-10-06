@@ -29,8 +29,11 @@ class DossierEventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Status changes are logged automatically; users record them via `changer_statut`.
+        # Status changes and client quote answers are logged automatically.
+        automatiques = (
+            TypeEvenement.CHANGEMENT_STATUT, TypeEvenement.DEVIS_ACCEPTE, TypeEvenement.DEVIS_REFUSE,
+        )
         self.fields["type_evenement"].choices = [
-            c for c in TypeEvenement.choices if c[0] != TypeEvenement.CHANGEMENT_STATUT
+            c for c in TypeEvenement.choices if c[0] not in automatiques
         ]
         self.fields["date_evenement"].input_formats = ["%Y-%m-%dT%H:%M"]

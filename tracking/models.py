@@ -16,6 +16,8 @@ class TypeEvenement(models.TextChoices):
     BAE = "bae", "Bon à enlever (BAE) obtenu"
     ENLEVEMENT = "enlevement", "Enlèvement de la marchandise"
     LIVRAISON = "livraison", "Livraison au client"
+    DEVIS_ACCEPTE = "devis_accepte", "Devis accepté par le client"
+    DEVIS_REFUSE = "devis_refuse", "Devis refusé par le client"
     INCIDENT = "incident", "Incident / blocage"
     NOTE = "note", "Note interne"
     AUTRE = "autre", "Autre"
@@ -32,6 +34,8 @@ EVENT_ICONS = {
     TypeEvenement.BAE: "patch-check",
     TypeEvenement.ENLEVEMENT: "truck",
     TypeEvenement.LIVRAISON: "house-check",
+    TypeEvenement.DEVIS_ACCEPTE: "hand-thumbs-up",
+    TypeEvenement.DEVIS_REFUSE: "hand-thumbs-down",
     TypeEvenement.INCIDENT: "exclamation-triangle",
     TypeEvenement.NOTE: "chat-left-text",
     TypeEvenement.AUTRE: "dot",

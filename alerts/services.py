@@ -22,6 +22,7 @@ class Categorie:
     DEVIS = "devis"
     ACHAT = "achat"
     VALIDATION = "validation"
+    REPONSE_DEVIS = "reponse_devis"
 
     LABELS = {
         FACTURE_ECHUE: "Factures échues",
@@ -30,6 +31,7 @@ class Categorie:
         DEVIS: "Devis à relancer",
         ACHAT: "Fournisseurs à payer",
         VALIDATION: "Validations à faire",
+        REPONSE_DEVIS: "Réponses clients aux devis",
     }
     ICONS = {
         FACTURE_ECHUE: "receipt",
@@ -38,6 +40,7 @@ class Categorie:
         DEVIS: "file-earmark-text",
         ACHAT: "bag",
         VALIDATION: "pen",
+        REPONSE_DEVIS: "chat-square-quote",
     }
 
 
@@ -140,6 +143,23 @@ def _devis(today):
         )
 
 
+def _reponses_devis(now):
+    """Quotes the client answered from the portal recently: accepted ones mean work to start."""
+    depuis = now - timedelta(days=settings.ALERTE_REPONSE_DEVIS_JOURS)
+    qs = Quote.objects.filter(reponse_client_le__gte=depuis).select_related("client", "dossier")
+    for quote in qs:
+        accepte = quote.statut == StatutDevis.ACCEPTE
+        detail = f"{'Accepté' if accepte else 'Refusé'} par {quote.reponse_client_nom} le {timezone.localtime(quote.reponse_client_le):%d/%m/%Y}"
+        if quote.reponse_client_commentaire:
+            detail += f" · « {quote.reponse_client_commentaire[:80]} »"
+        yield Alerte(
+            Categorie.REPONSE_DEVIS, "info" if accepte else "warning",
+            f"{quote.reference} - {quote.client}", detail, quote.get_absolute_url(),
+            (now - quote.reponse_client_le).days,
+            quote.dossier.agent_responsable_id if quote.dossier else None,
+        )
+
+
 def _achats(today):
     proche = settings.ALERTE_ECHEANCE_PROCHE_JOURS
     qs = (
@@ -184,7 +204,7 @@ def _validations(user):
 def collect_alertes(user, now=None):
     now = now or timezone.now()
     today = timezone.localdate(now)
-    sources = [_factures_echues(today), _dossiers(now), _devis(today)]
+    sources = [_factures_echues(today), _dossiers(now), _devis(today), _reponses_devis(now)]
     if user.can_manage_billing():
         sources.append(_achats(today))
     if user.role != Role.CONSULTATION:

@@ -12,5 +12,6 @@ urlpatterns = [
     path("factures/", views.InvoiceListView.as_view(), name="invoice_list"),
     path("factures/<int:pk>/pdf/", views.InvoicePdfView.as_view(), name="invoice_pdf"),
     path("devis/", views.QuoteListView.as_view(), name="quote_list"),
+    path("devis/<int:pk>/", views.QuoteDetailView.as_view(), name="quote_detail"),
     path("devis/<int:pk>/pdf/", views.QuotePdfView.as_view(), name="quote_pdf"),
 ]

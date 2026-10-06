@@ -147,6 +147,10 @@
   </tr>
 </table>
 
+{% if doc.reponse_client_le and doc.statut == "accepte" %}
+<div style="margin-top: 10px;" class="words"><b>Bon pour accord</b> donné en ligne le {{ doc.reponse_client_le|date:"d/m/Y à H:i" }} par {{ doc.reponse_client_nom }}.</div>
+{% endif %}
+
 {% if doc.est_exonere_tva %}
 <div style="margin-top: 10px;"><b>Exonéré de TVA</b>{% if doc.motif_exoneration %} - {{ doc.motif_exoneration }}{% endif %}</div>
 {% endif %}
