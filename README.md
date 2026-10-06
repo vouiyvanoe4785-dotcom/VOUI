@@ -37,7 +37,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env   # puis ajustez SECRET_KEY, etc.
+cp .env.example .env   # contient DEBUG=True pour le développement ; ajustez SECRET_KEY, etc.
 
 python manage.py migrate
 python manage.py createsuperuser
@@ -46,7 +46,7 @@ python manage.py runserver
 
 L'application est ensuite accessible sur `http://127.0.0.1:8000/`.
 
-Lancer les tests :
+Lancer les tests (avec le `.env` de développement, ou `DEBUG=True` dans l'environnement : sans lui, l'application refuse de démarrer avec la clé secrète par défaut) :
 
 ```bash
 python manage.py test

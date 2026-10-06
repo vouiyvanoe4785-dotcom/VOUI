@@ -83,3 +83,32 @@ class ProtectedFilesTests(TestCase):
         form_page = self.client.get(reverse("core:societe"))
         self.assertContains(form_page, reverse("core:logo"))
         self.assertNotContains(form_page, "/media/")
+
+
+class UploadExtensionTests(TestCase):
+    def setUp(self):
+        media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media, ignore_errors=True)
+        override = override_settings(MEDIA_ROOT=media)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.client.force_login(User.objects.create_user("agent", password="x"))
+        partner = Partner.objects.create(raison_sociale="ACME")
+        self.dossier = Dossier.objects.create(client=partner, type_operation=TypeOperation.IMPORT)
+        self.url = reverse("documents:create", args=[self.dossier.pk])
+
+    def upload(self, name, content):
+        return self.client.post(self.url, {
+            "type_document": "autre", "fichier": SimpleUploadedFile(name, content),
+        })
+
+    def test_html_is_rejected(self):
+        resp = self.upload("piege.html", b"<script>alert(1)</script>")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Document.objects.exists())
+        self.assertContains(resp, "Formats acceptés")
+
+    def test_pdf_is_accepted(self):
+        resp = self.upload("bl.pdf", b"%PDF-1.4")
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(Document.objects.count(), 1)

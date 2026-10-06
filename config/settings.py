@@ -24,13 +24,6 @@ if not DEBUG and SECRET_KEY.startswith(_INSECURE_SECRET_KEY_PREFIX):
         "Set a real SECRET_KEY via the environment before deploying."
     )
 
-if not DEBUG and SECRET_KEY.startswith("django-insecure-"):
-    # The default key is public (it is in the repository): session cookies and password
-    # reset links could be forged with it.
-    from django.core.exceptions import ImproperlyConfigured
-
-    raise ImproperlyConfigured("Définissez une SECRET_KEY propre à ce serveur dans .env (DEBUG=False).")
-
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
 CSRF_TRUSTED_ORIGINS = config(
