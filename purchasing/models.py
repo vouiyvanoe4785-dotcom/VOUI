@@ -5,7 +5,9 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from billing.models import ModePaiement, TypeFrais
+from billing.models import (
+    DocumentTarifeMixin, LigneTarifeeMixin, ModePaiement, TauxTVA, TypeFrais,
+)
 from core.numbering import generate_reference
 from dossiers.models import Dossier
 from partners.models import Partner
@@ -21,7 +23,22 @@ class StatutAchat(models.TextChoices):
     ANNULEE = "annulee", "Annulée"
 
 
-class SupplierInvoice(models.Model):
+# Taux proposé par défaut sur les achats, selon le type de frais (modifiable par ligne).
+# Contrairement aux ventes, les débours facturés par un fournisseur (magasinage,
+# manutention portuaire...) portent en général de la TVA ; seuls les droits et taxes
+# payés à la douane n'en portent pas.
+TAUX_TVA_ACHAT_PAR_FRAIS = {
+    TypeFrais.HONORAIRES: TauxTVA.TAUX_20,
+    TypeFrais.DEBOURS: TauxTVA.TAUX_20,
+    TypeFrais.DROITS_TAXES: TauxTVA.EXONERE,
+    TypeFrais.ACCONAGE: TauxTVA.TAUX_20,
+    TypeFrais.MANUTENTION: TauxTVA.TAUX_20,
+    TypeFrais.TRANSPORT: TauxTVA.TAUX_14,
+    TypeFrais.AUTRE: TauxTVA.TAUX_20,
+}
+
+
+class SupplierInvoice(DocumentTarifeMixin, models.Model):
     reference = models.CharField(max_length=30, unique=True, blank=True, editable=False)
     reference_fournisseur = models.CharField(
         "N° de facture fournisseur", max_length=100, blank=True
@@ -64,8 +81,10 @@ class SupplierInvoice(models.Model):
         return reverse("purchasing:invoice_detail", kwargs={"pk": self.pk})
 
     @property
-    def montant_total(self):
-        return sum((line.montant for line in self.lignes.all()), Decimal("0"))
+    def est_exonere_tva(self):
+        # The client exemption only applies to what we invoice; a supplier's VAT is
+        # whatever the supplier charged.
+        return False
 
     @property
     def montant_paye(self):
@@ -80,22 +99,12 @@ class SupplierInvoice(models.Model):
         return self.solde > 0 and self.statut not in (StatutAchat.ANNULEE,)
 
 
-class SupplierInvoiceLine(models.Model):
+class SupplierInvoiceLine(LigneTarifeeMixin):
     invoice = models.ForeignKey(SupplierInvoice, on_delete=models.CASCADE, related_name="lignes")
-    type_frais = models.CharField("Type de frais", max_length=20, choices=TypeFrais.choices)
-    designation = models.CharField("Désignation", max_length=255)
-    quantite = models.DecimalField("Quantité", max_digits=10, decimal_places=2, default=1)
-    prix_unitaire = models.DecimalField("Prix unitaire", max_digits=14, decimal_places=2, default=0)
+    document_field = "invoice"
 
-    class Meta:
-        ordering = ["id"]
-
-    @property
-    def montant(self):
-        return (self.quantite or Decimal("0")) * (self.prix_unitaire or Decimal("0"))
-
-    def __str__(self):
-        return self.designation
+    class Meta(LigneTarifeeMixin.Meta):
+        pass
 
 
 class SupplierPayment(models.Model):
