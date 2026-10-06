@@ -34,6 +34,8 @@ class UserCreateForm(UserCreationForm):
         if cleaned.get("role") == Role.CLIENT:
             if not cleaned.get("partner"):
                 self.add_error("partner", "Choisissez la société cliente à laquelle ce compte donne accès.")
+            if not cleaned.get("email"):
+                self.add_error("email", "Obligatoire pour un client : c'est là qu'il recevra le lien « mot de passe oublié ».")
         else:
             cleaned["partner"] = None
         return cleaned

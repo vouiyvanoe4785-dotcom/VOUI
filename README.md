@@ -4,7 +4,7 @@ Plateforme de gestion centralisée pour les transitaires, commissionnaires en do
 
 ## Modules couverts (v1)
 
-- **Comptes & rôles** : administrateur, direction, agent de transit, comptable, consultation.
+- **Comptes & rôles** : administrateur, direction, agent de transit, comptable, consultation, client (portail). *Mot de passe oublié* par e-mail (lien à usage unique valable 24 h), *Changer mon mot de passe* dans le menu, et envoi d'un lien de réinitialisation par l'administrateur depuis la liste de l'équipe.
 - **Clients & tiers** : clients, fournisseurs, transporteurs, prestataires, agents en douane, banques/assurances.
 - **Dossiers de transit** : numérotation automatique (`AT-2026-0001`), référence client, donneur d'ordre, type d'opération (import/export/transit/douane), régime douanier, Incoterm, origine/provenance/destination, agent responsable, statut, validation interne.
 - **Marchandises / cargo** : désignation, code SH/HS indicatif, quantité, colisage, poids, valeur déclarée, origine.
@@ -78,6 +78,7 @@ core/         Éléments partagés (numérotation, templates de base, filtres)
 - Définir `DEBUG=False`, un `SECRET_KEY` fort et `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`.
 - Basculer `DB_ENGINE=postgres` et renseigner les variables `DB_*`.
 - Exécuter `python manage.py collectstatic`.
+- **E-mail** : renseigner `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` (sinon aucun e-mail de réinitialisation ne part). Derrière Nginx en HTTPS, mettre `BEHIND_HTTPS_PROXY=True` et transmettre `X-Forwarded-Proto` pour que les liens envoyés soient en `https://`.
 - Servir l'application avec Gunicorn derrière un reverse proxy (Nginx, etc.).
 - **Fichiers téléversés** : l'application ne publie jamais `MEDIA_ROOT` ; chaque document passe par une vue qui vérifie l'accès (connexion côté interne, propriété du dossier côté portail). Ne créez **pas** de `location /media/` publique. Pour que Nginx envoie lui-même les fichiers après ce contrôle, définissez `PROTECTED_MEDIA_ACCEL_PREFIX=/protected-media/` et ajoutez :
 

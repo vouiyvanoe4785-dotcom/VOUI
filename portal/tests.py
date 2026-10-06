@@ -75,7 +75,10 @@ class PortalIsolationTests(PortalTestCase):
         checked = 0
         for name, pattern in iter_named_urls():
             # Django admin URLs take non-numeric arguments; "/admin/" is checked below.
-            if name.startswith(("portal:", "admin:")) or name in ("accounts:logout", "core:logo"):
+            # Intentionally open to client accounts: logout, password pages, company logo.
+            if name.startswith(("portal:", "admin:", "accounts:password_")) or name in (
+                "accounts:logout", "core:logo",
+            ):
                 continue
             kwargs = {key: 1 for key in pattern.regex.groupindex}
             url = reverse(name, kwargs=kwargs)
@@ -182,7 +185,12 @@ class PortalAccountTests(TestCase):
         form = self.form(role=Role.CLIENT)
         self.assertFalse(form.is_valid())
         self.assertIn("partner", form.errors)
-        self.assertTrue(self.form(role=Role.CLIENT, partner=self.acme.pk).is_valid())
+        self.assertTrue(self.form(role=Role.CLIENT, partner=self.acme.pk, email="n@acme.ma").is_valid())
+
+    def test_client_role_requires_email(self):
+        form = self.form(role=Role.CLIENT, partner=self.acme.pk)
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
 
     def test_staff_role_drops_company(self):
         form = self.form(role=Role.AGENT_TRANSIT, partner=self.acme.pk)
@@ -198,7 +206,7 @@ class PortalAccountTests(TestCase):
         form_page = self.client.get(url)
         self.assertEqual(form_page.context["form"].initial["partner"], str(self.acme.pk))
         resp = self.client.post(reverse("accounts:team_create"), {
-            "username": "nadia", "role": Role.CLIENT, "partner": self.acme.pk,
+            "username": "nadia", "role": Role.CLIENT, "partner": self.acme.pk, "email": "n@acme.ma",
             "password1": "Un-mot-de-passe-solide-42", "password2": "Un-mot-de-passe-solide-42",
         })
         self.assertRedirects(resp, reverse("partners:detail", args=[self.acme.pk]), fetch_redirect_response=False)

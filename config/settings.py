@@ -171,3 +171,26 @@ ALERTE_ECHEANCE_PROCHE_JOURS = config("ALERTE_ECHEANCE_PROCHE_JOURS", default=3,
 # le préfixe d'une location `internal` pointant sur MEDIA_ROOT (voir README) pour que Nginx
 # envoie les fichiers après le contrôle d'accès de Django.
 PROTECTED_MEDIA_ACCEL_PREFIX = config("PROTECTED_MEDIA_ACCEL_PREFIX", default="")
+
+# E-mail (réinitialisation des mots de passe, etc.). En développement, les e-mails
+# sont affichés dans la console ; en production, renseigner le serveur SMTP.
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend" if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = config("EMAIL_HOST", default="localhost")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="Ayden Transit <no-reply@localhost>")
+
+# Lien de réinitialisation du mot de passe valable 24 h.
+PASSWORD_RESET_TIMEOUT = config("PASSWORD_RESET_TIMEOUT", default=60 * 60 * 24, cast=int)
+
+# Derrière un reverse proxy HTTPS (Nginx), pour que Django sache que la requête est
+# sécurisée et génère des liens https:// dans les e-mails.
+if config("BEHIND_HTTPS_PROXY", default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

@@ -17,6 +17,7 @@ class PortalAccessMiddleware:
         self.client_allowed = (
             PORTAL_PREFIX,
             "/comptes/logout/",
+            "/comptes/mot-de-passe/",
             reverse("core:logo"),
             "/" + settings.STATIC_URL.lstrip("/"),
         )

@@ -52,6 +52,7 @@
             {% if user.is_admin_role %}
             <li><a class="dropdown-item" href="{% url 'core:societe' %}"><i class="bi bi-building"></i> Société (en-tête PDF)</a></li>
             {% endif %}
+            <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}"><i class="bi bi-shield-lock"></i> Changer mon mot de passe</a></li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <form method="post" action="{% url 'accounts:logout' %}">

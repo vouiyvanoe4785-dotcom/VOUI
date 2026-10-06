@@ -33,6 +33,7 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><span class="dropdown-item-text text-muted small">{{ user.get_full_name|default:user.username }}</span></li>
+            <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}"><i class="bi bi-shield-lock"></i> Changer mon mot de passe</a></li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <form method="post" action="{% url 'accounts:logout' %}">
