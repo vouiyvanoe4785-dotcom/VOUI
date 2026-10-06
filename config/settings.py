@@ -30,6 +30,15 @@ CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS", default="", cast=Csv()
 )
 
+# Set automatically by Render to the service's public hostname (xxx.onrender.com).
+RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
+# Where the SQLite database and uploaded files live; point it at a persistent disk in production.
+DATA_DIR = Path(config("DATA_DIR", default=str(BASE_DIR)))
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -111,7 +120,12 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": DATA_DIR / "db.sqlite3",
+            # WAL + immediate transactions avoid "database is locked" with several gunicorn workers.
+            "OPTIONS": {
+                "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+                "transaction_mode": "IMMEDIATE",
+            },
         }
     }
 
@@ -165,7 +179,7 @@ STORAGES = {
 # Media files (uploaded documents)
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = DATA_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -180,7 +194,10 @@ ALERTE_REPONSE_DEVIS_JOURS = config("ALERTE_REPONSE_DEVIS_JOURS", default=7, cas
 
 # Adresse publique de l'application, pour les liens des e-mails envoyés hors requête
 # (récapitulatif quotidien des alertes).
-SITE_URL = config("SITE_URL", default="http://127.0.0.1:8000").rstrip("/")
+SITE_URL = config(
+    "SITE_URL",
+    default=f"https://{RENDER_EXTERNAL_HOSTNAME}" if RENDER_EXTERNAL_HOSTNAME else "http://127.0.0.1:8000",
+).rstrip("/")
 
 # Fichiers téléversés : jamais publiés tels quels. En production derrière Nginx, renseigner
 # le préfixe d'une location `internal` pointant sur MEDIA_ROOT (voir README) pour que Nginx
@@ -221,3 +238,11 @@ CSRF_COOKIE_SECURE = HTTPS_ONLY
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
 SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = config("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False, cast=bool)
+
+# Errors (tracebacks of 500s) go to stderr, so they show up in the host's logs.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}

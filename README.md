@@ -49,7 +49,30 @@ Comptes de démonstration (mot de passe **`ayden2026`** pour tous) :
 
 Pensez à changer ces mots de passe (menu utilisateur → *Changer mon mot de passe*) avant d'y saisir de vraies données. Pour repartir de zéro : arrêter l'application et supprimer le fichier `db.sqlite3`.
 
-L'application tourne sur votre ordinateur : les autres postes du bureau n'y ont pas accès tant qu'elle n'est pas installée sur un serveur (voir *Déploiement en production*).
+L'application tourne sur votre ordinateur : les autres postes du bureau n'y ont pas accès tant qu'elle n'est pas installée sur un serveur (voir ci-dessous).
+
+## Mettre en ligne (accessible depuis n'importe quel poste ou téléphone)
+
+L'hébergement se fait chez [Render](https://render.com), en quelques clics, grâce au fichier `render.yaml` du dépôt.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/vouiyvanoe4785-dotcom/VOUI)
+
+1. Créer un compte sur https://render.com avec **« Sign up with GitHub »** (le même compte GitHub que ce dépôt), puis ajouter une carte bancaire dans *Billing*.
+2. Cliquer sur le bouton **Deploy to Render** ci-dessus (ou, dans Render : *New → Blueprint* puis choisir le dépôt `VOUI`).
+3. Render demande **`ADMIN_PASSWORD`** : choisir le mot de passe du compte `admin` (10 caractères minimum, à noter). Valider avec **Apply / Deploy Blueprint**.
+4. Attendre la fin de l'installation (5 à 10 minutes, suivie dans l'onglet *Logs*), puis ouvrir l'adresse affichée en haut de la page du service, du type `https://ayden-transit-xxxx.onrender.com`, et se connecter avec `admin` et ce mot de passe.
+
+Ensuite : renseigner *Société (en-tête PDF)* dans le menu utilisateur, puis créer les comptes de l'équipe dans *Équipe*. Le serveur démarre vide (pas de données de démonstration, dont les mots de passe sont publics).
+
+**Coût** : environ 7 $ par mois (offre *Starter*) + 0,25 $ par mois pour le disque de 1 Go qui contient la base et les documents. L'offre gratuite de Render ne convient pas : elle n'a pas de disque permanent, donc les données seraient perdues à chaque redémarrage.
+
+**Sauvegardes** : Render prend un instantané du disque chaque jour (restaurable depuis *Disks*). Pour une copie chez vous, ouvrir le *Shell* du service et télécharger `/var/data/db.sqlite3` et le dossier `/var/data/media`.
+
+**Mises à jour** : chaque modification poussée sur la branche `claude/transit-logistics-app-2gy3ka` est installée automatiquement ; les données sont conservées.
+
+**Nom de domaine** (facultatif) : *Settings → Custom Domains* dans Render, par exemple `transit.votre-societe.ma`. Une fois le HTTPS actif sur ce domaine, ajouter dans *Environment* la variable `ALLOWED_HOSTS` avec ce nom et `CSRF_TRUSTED_ORIGINS=https://transit.votre-societe.ma`.
+
+**E-mails** (mot de passe oublié, récapitulatif des alertes) : ajouter dans *Environment* les variables `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` et `DEFAULT_FROM_EMAIL` de votre messagerie. Sans elles, l'application fonctionne mais n'envoie pas d'e-mails ; l'administrateur crée alors les mots de passe lui-même dans *Équipe*.
 
 ## Démarrage manuel (développeurs)
 

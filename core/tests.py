@@ -96,3 +96,37 @@ class DemoCommandTests(TestCase):
 
         call_command("demo", stdout=StringIO())
         self.assertEqual(Dossier.objects.count(), nb)
+
+
+class EnsureAdminCommandTests(TestCase):
+    def run_cmd(self, **env):
+        import os
+        from unittest import mock
+
+        from django.core.management import call_command
+
+        with mock.patch.dict(os.environ, env):
+            call_command("ensure_admin", stdout=StringIO())
+
+    def test_creates_admin_from_environment_once(self):
+        self.run_cmd(ADMIN_PASSWORD="Un-Mot-De-Passe-Solide")
+        admin = User.objects.get(username="admin")
+        self.assertTrue(admin.is_superuser)
+        self.assertEqual(admin.role, Role.ADMIN)
+        self.assertTrue(admin.check_password("Un-Mot-De-Passe-Solide"))
+
+        # Later restarts must not reset a password the admin changed since.
+        admin.set_password("Change-Depuis-Le-Menu")
+        admin.save()
+        self.run_cmd(ADMIN_PASSWORD="Un-Mot-De-Passe-Solide")
+        admin.refresh_from_db()
+        self.assertTrue(admin.check_password("Change-Depuis-Le-Menu"))
+
+    def test_refuses_missing_or_short_password(self):
+        from django.core.management.base import CommandError
+
+        with self.assertRaises(CommandError):
+            self.run_cmd(ADMIN_PASSWORD="")
+        with self.assertRaises(CommandError):
+            self.run_cmd(ADMIN_PASSWORD="court")
+        self.assertFalse(User.objects.exists())

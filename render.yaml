@@ -1,0 +1,37 @@
+# Render Blueprint : https://render.com/docs/blueprint-spec
+# Un seul service web ; la base SQLite et les documents déposés sont sur un disque persistant
+# (sauvegardé chaque jour par Render).
+services:
+  - type: web
+    name: ayden-transit
+    runtime: python
+    plan: starter
+    region: frankfurt
+    branch: claude/transit-logistics-app-2gy3ka
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: >-
+      python manage.py migrate --noinput &&
+      python manage.py ensure_admin &&
+      gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    disk:
+      name: ayden-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATA_DIR
+        value: /var/data
+      - key: BEHIND_HTTPS_PROXY
+        value: "True"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: TIME_ZONE
+        value: Africa/Casablanca
+      # Mot de passe du compte « admin », demandé lors de l'installation (10 caractères minimum).
+      - key: ADMIN_PASSWORD
+        sync: false
