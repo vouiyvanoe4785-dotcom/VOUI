@@ -86,11 +86,12 @@
 <table class="lines" style="margin-top: 16px;" repeat="1">
   <thead>
     <tr>
-      <th style="width: 20%;">Type de frais</th>
-      <th style="width: 37%;">Désignation</th>
-      <th style="width: 8%;" class="num">Qté</th>
-      <th style="width: 17%;" class="num">P.U. ({{ devise }})</th>
-      <th style="width: 18%;" class="num">Montant ({{ devise }})</th>
+      <th style="width: 19%;">Type de frais</th>
+      <th style="width: 34%;">Désignation</th>
+      <th style="width: 7%;" class="num">Qté</th>
+      <th style="width: 15%;" class="num">P.U. HT</th>
+      <th style="width: 8%;" class="num">TVA</th>
+      <th style="width: 17%;" class="num">Montant HT</th>
     </tr>
   </thead>
   <tbody>
@@ -100,10 +101,11 @@
       <td>{{ line.designation }}</td>
       <td class="num">{{ line.quantite|floatformat:"-2" }}</td>
       <td class="num">{{ line.prix_unitaire|floatformat:"2g" }}</td>
+      <td class="num">{{ line.taux_tva }} %</td>
       <td class="num">{{ line.montant|floatformat:"2g" }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="5" class="muted">Aucune ligne.</td></tr>
+    <tr><td colspan="6" class="muted">Aucune ligne.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -111,19 +113,31 @@
 <table style="margin-top: 10px;">
   <tr>
     <td style="width: 52%;">
-      {% if sous_totaux|length > 1 %}
+      {% if afficher_recap %}
       <table class="totals">
-        <tr><td colspan="2" class="box-title">Récapitulatif par type de frais</td></tr>
+        <tr><td colspan="2" class="box-title">Récapitulatif HT par type de frais ({{ devise }})</td></tr>
         {% for label, montant in sous_totaux %}
         <tr><td>{{ label }}</td><td class="num">{{ montant|floatformat:"2g" }}</td></tr>
         {% endfor %}
       </table>
       {% endif %}
+      <table class="totals" style="margin-top: 6px;">
+        <tr><td class="box-title" style="width: 44%;">Ventilation TVA</td><td class="box-title num" style="width: 30%;">Base HT</td><td class="box-title num" style="width: 26%;">TVA</td></tr>
+        {% for row in doc.ventilation_tva %}
+        <tr>
+          <td>{% if row.taux %}{{ row.taux }} %{% else %}Exonéré/débours{% endif %}</td>
+          <td class="num">{{ row.base|floatformat:"2g" }}</td>
+          <td class="num">{{ row.tva|floatformat:"2g" }}</td>
+        </tr>
+        {% endfor %}
+      </table>
     </td>
     <td style="width: 6%;"></td>
     <td style="width: 42%;">
       <table class="totals">
-        <tr class="grand-total"><td>Total</td><td class="num">{{ total|floatformat:"2g" }} {{ devise }}</td></tr>
+        <tr><td>Total HT</td><td class="num">{{ doc.montant_ht|floatformat:"2g" }} {{ devise }}</td></tr>
+        <tr><td>Total TVA</td><td class="num">{{ doc.montant_tva|floatformat:"2g" }} {{ devise }}</td></tr>
+        <tr class="grand-total"><td>Total TTC</td><td class="num">{{ total|floatformat:"2g" }} {{ devise }}</td></tr>
         {% if afficher_reglements %}
         <tr><td>Déjà réglé</td><td class="num">{{ paye|floatformat:"2g" }} {{ devise }}</td></tr>
         <tr><td><b>Reste à payer</b></td><td class="num"><b>{{ solde|floatformat:"2g" }} {{ devise }}</b></td></tr>

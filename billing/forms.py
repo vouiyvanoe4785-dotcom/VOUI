@@ -8,7 +8,9 @@ LINE_WIDGETS = {
     "designation": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
     "quantite": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
     "prix_unitaire": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+    "taux_tva": forms.Select(attrs={"class": "form-select form-select-sm"}),
 }
+LINE_FIELDS = ["type_frais", "designation", "quantite", "prix_unitaire", "taux_tva"]
 
 
 class QuoteForm(forms.ModelForm):
@@ -27,7 +29,7 @@ class QuoteForm(forms.ModelForm):
 
 QuoteLineFormSet = inlineformset_factory(
     Quote, QuoteLine,
-    fields=["type_frais", "designation", "quantite", "prix_unitaire"],
+    fields=LINE_FIELDS,
     widgets=LINE_WIDGETS,
     extra=1, can_delete=True,
 )
@@ -48,7 +50,7 @@ class InvoiceForm(forms.ModelForm):
 
 InvoiceLineFormSet = inlineformset_factory(
     Invoice, InvoiceLine,
-    fields=["type_frais", "designation", "quantite", "prix_unitaire"],
+    fields=LINE_FIELDS,
     widgets=LINE_WIDGETS,
     extra=1, can_delete=True,
 )

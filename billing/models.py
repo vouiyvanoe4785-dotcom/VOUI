@@ -19,6 +19,91 @@ class TypeFrais(models.TextChoices):
     AUTRE = "autre", "Autre"
 
 
+class TauxTVA(models.IntegerChoices):
+    EXONERE = 0, "0 % (exonéré / débours)"
+    TAUX_7 = 7, "7 %"
+    TAUX_10 = 10, "10 %"
+    TAUX_14 = 14, "14 %"
+    TAUX_20 = 20, "20 %"
+
+
+# Taux proposé par défaut selon le type de frais (modifiable ligne par ligne).
+# Les débours et les droits et taxes sont refacturés à l'identique, hors TVA.
+TAUX_TVA_PAR_FRAIS = {
+    TypeFrais.HONORAIRES: TauxTVA.TAUX_20,
+    TypeFrais.DEBOURS: TauxTVA.EXONERE,
+    TypeFrais.DROITS_TAXES: TauxTVA.EXONERE,
+    TypeFrais.ACCONAGE: TauxTVA.TAUX_20,
+    TypeFrais.MANUTENTION: TauxTVA.TAUX_20,
+    TypeFrais.TRANSPORT: TauxTVA.TAUX_14,
+    TypeFrais.AUTRE: TauxTVA.TAUX_20,
+}
+
+CENTIME = Decimal("0.01")
+
+
+class LigneTarifeeMixin(models.Model):
+    """Fields and amounts shared by quote and invoice lines (montant = HT)."""
+
+    type_frais = models.CharField("Type de frais", max_length=20, choices=TypeFrais.choices)
+    designation = models.CharField("Désignation", max_length=255)
+    quantite = models.DecimalField("Quantité", max_digits=10, decimal_places=2, default=1)
+    prix_unitaire = models.DecimalField("Prix unitaire HT", max_digits=14, decimal_places=2, default=0)
+    taux_tva = models.PositiveSmallIntegerField(
+        "TVA", choices=TauxTVA.choices, default=TauxTVA.TAUX_20
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["id"]
+
+    @property
+    def montant(self):
+        return (Decimal(self.quantite or 0) * Decimal(self.prix_unitaire or 0)).quantize(CENTIME)
+
+    @property
+    def montant_tva(self):
+        return (self.montant * Decimal(self.taux_tva or 0) / 100).quantize(CENTIME)
+
+    @property
+    def montant_ttc(self):
+        return self.montant + self.montant_tva
+
+    def __str__(self):
+        return self.designation
+
+
+class DocumentTarifeMixin:
+    """HT / TVA / TTC totals for a document whose lines live in `self.lignes`.
+
+    VAT is computed per rate on the summed HT amounts (one rounding per rate), the
+    way it is presented in the VAT breakdown.
+    """
+
+    @property
+    def montant_ht(self):
+        return sum((line.montant for line in self.lignes.all()), Decimal("0"))
+
+    @property
+    def ventilation_tva(self):
+        bases = {}
+        for line in self.lignes.all():
+            bases[line.taux_tva] = bases.get(line.taux_tva, Decimal("0")) + line.montant
+        return [
+            {"taux": taux, "base": base, "tva": (base * Decimal(taux) / 100).quantize(CENTIME)}
+            for taux, base in sorted(bases.items())
+        ]
+
+    @property
+    def montant_tva(self):
+        return sum((row["tva"] for row in self.ventilation_tva), Decimal("0"))
+
+    @property
+    def montant_total(self):
+        """Total TTC, i.e. what the client owes."""
+        return self.montant_ht + self.montant_tva
+
+
 class StatutDevis(models.TextChoices):
     BROUILLON = "brouillon", "Brouillon"
     ENVOYE = "envoye", "Envoyé"
@@ -32,7 +117,7 @@ class TypeDevis(models.TextChoices):
     PROFORMA = "proforma", "Facture proforma"
 
 
-class Quote(models.Model):
+class Quote(DocumentTarifeMixin, models.Model):
     reference = models.CharField(max_length=30, unique=True, blank=True, editable=False)
     type_devis = models.CharField(
         "Type", max_length=10, choices=TypeDevis.choices, default=TypeDevis.DEVIS
@@ -73,27 +158,13 @@ class Quote(models.Model):
     def get_absolute_url(self):
         return reverse("billing:quote_detail", kwargs={"pk": self.pk})
 
-    @property
-    def montant_total(self):
-        return sum((line.montant for line in self.lignes.all()), Decimal("0"))
 
 
-class QuoteLine(models.Model):
+class QuoteLine(LigneTarifeeMixin):
     quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name="lignes")
-    type_frais = models.CharField("Type de frais", max_length=20, choices=TypeFrais.choices)
-    designation = models.CharField("Désignation", max_length=255)
-    quantite = models.DecimalField("Quantité", max_digits=10, decimal_places=2, default=1)
-    prix_unitaire = models.DecimalField("Prix unitaire", max_digits=14, decimal_places=2, default=0)
 
-    class Meta:
-        ordering = ["id"]
-
-    @property
-    def montant(self):
-        return (self.quantite or Decimal("0")) * (self.prix_unitaire or Decimal("0"))
-
-    def __str__(self):
-        return self.designation
+    class Meta(LigneTarifeeMixin.Meta):
+        pass
 
 
 class StatutFacture(models.TextChoices):
@@ -105,7 +176,7 @@ class StatutFacture(models.TextChoices):
     ANNULEE = "annulee", "Annulée"
 
 
-class Invoice(models.Model):
+class Invoice(DocumentTarifeMixin, models.Model):
     reference = models.CharField(max_length=30, unique=True, blank=True, editable=False)
     dossier = models.ForeignKey(
         Dossier, verbose_name="Dossier", on_delete=models.CASCADE, related_name="factures",
@@ -143,9 +214,6 @@ class Invoice(models.Model):
     def get_absolute_url(self):
         return reverse("billing:invoice_detail", kwargs={"pk": self.pk})
 
-    @property
-    def montant_total(self):
-        return sum((line.montant for line in self.lignes.all()), Decimal("0"))
 
     @property
     def montant_paye(self):
@@ -160,22 +228,11 @@ class Invoice(models.Model):
         return self.solde > 0 and self.statut not in (StatutFacture.ANNULEE,)
 
 
-class InvoiceLine(models.Model):
+class InvoiceLine(LigneTarifeeMixin):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lignes")
-    type_frais = models.CharField("Type de frais", max_length=20, choices=TypeFrais.choices)
-    designation = models.CharField("Désignation", max_length=255)
-    quantite = models.DecimalField("Quantité", max_digits=10, decimal_places=2, default=1)
-    prix_unitaire = models.DecimalField("Prix unitaire", max_digits=14, decimal_places=2, default=0)
 
-    class Meta:
-        ordering = ["id"]
-
-    @property
-    def montant(self):
-        return (self.quantite or Decimal("0")) * (self.prix_unitaire or Decimal("0"))
-
-    def __str__(self):
-        return self.designation
+    class Meta(LigneTarifeeMixin.Meta):
+        pass
 
 
 class ModePaiement(models.TextChoices):

@@ -16,7 +16,16 @@ from dossiers.models import Dossier
 from .forms import (
     InvoiceForm, InvoiceLineFormSet, PaymentForm, QuoteForm, QuoteLineFormSet, ReminderForm,
 )
-from .models import Invoice, Payment, Quote, Reminder, StatutFacture, TypeDevis
+from .models import (
+    TAUX_TVA_PAR_FRAIS, Invoice, Payment, Quote, Reminder, StatutFacture, TypeDevis,
+)
+
+
+def _form_context(form, formset, instance):
+    return {
+        "form": form, "formset": formset, "object": instance,
+        "taux_par_frais": {str(k): int(v) for k, v in TAUX_TVA_PAR_FRAIS.items()},
+    }
 
 
 class QuoteListView(LoginRequiredMixin, ListView):
@@ -49,7 +58,7 @@ class QuoteEditView(LoginRequiredMixin, View):
             initial = {"dossier": dossier.pk, "client": dossier.client.pk}
         form = QuoteForm(instance=instance, initial=initial)
         formset = QuoteLineFormSet(instance=instance)
-        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+        return render(request, self.template_name, _form_context(form, formset, instance))
 
     def post(self, request, pk=None):
         instance = self.get_instance(pk)
@@ -67,7 +76,7 @@ class QuoteEditView(LoginRequiredMixin, View):
                 return redirect("billing:quote_detail", pk=quote.pk)
         else:
             formset = QuoteLineFormSet(request.POST, instance=formset_instance)
-        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+        return render(request, self.template_name, _form_context(form, formset, instance))
 
 
 class QuoteDeleteView(LoginRequiredMixin, DeleteView):
@@ -130,7 +139,7 @@ class InvoiceEditView(LoginRequiredMixin, View):
             initial = {"dossier": dossier.pk, "client": dossier.client.pk}
         form = InvoiceForm(instance=instance, initial=initial)
         formset = InvoiceLineFormSet(instance=instance)
-        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+        return render(request, self.template_name, _form_context(form, formset, instance))
 
     def post(self, request, pk=None):
         instance = self.get_instance(pk)
@@ -148,7 +157,7 @@ class InvoiceEditView(LoginRequiredMixin, View):
                 return redirect("billing:invoice_detail", pk=invoice.pk)
         else:
             formset = InvoiceLineFormSet(request.POST, instance=formset_instance)
-        return render(request, self.template_name, {"form": form, "formset": formset, "object": instance})
+        return render(request, self.template_name, _form_context(form, formset, instance))
 
 
 class InvoiceDeleteView(LoginRequiredMixin, DeleteView):
@@ -223,7 +232,7 @@ def _document_context(doc, lignes):
     for line in lignes:
         label = line.get_type_frais_display()
         totaux[label] = totaux.get(label, 0) + line.montant
-    total = sum((line.montant for line in lignes), Decimal("0"))
+    total = doc.montant_total
     return {
         "doc": doc,
         "societe": Societe.load(),
@@ -231,6 +240,8 @@ def _document_context(doc, lignes):
         "dossier": doc.dossier,
         "lignes": lignes,
         "sous_totaux": list(totaux.items()),
+        # Only worth printing when it actually groups several lines together.
+        "afficher_recap": 1 < len(totaux) < len(lignes),
         "total": total,
         "total_lettres": montant_en_lettres(total, devise),
         "devise": devise,
@@ -239,7 +250,9 @@ def _document_context(doc, lignes):
 
 class QuotePdfView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        quote = get_object_or_404(Quote.objects.select_related("client", "dossier"), pk=pk)
+        quote = get_object_or_404(
+            Quote.objects.select_related("client", "dossier").prefetch_related("lignes"), pk=pk
+        )
         ctx = _document_context(quote, list(quote.lignes.all()))
         infos = [("Date", quote.date_creation.strftime("%d/%m/%Y"))]
         if quote.date_validite:
@@ -260,7 +273,9 @@ class QuotePdfView(LoginRequiredMixin, View):
 
 class InvoicePdfView(LoginRequiredMixin, View):
     def get(self, request, pk):
-        invoice = get_object_or_404(Invoice.objects.select_related("client", "dossier"), pk=pk)
+        invoice = get_object_or_404(
+            Invoice.objects.select_related("client", "dossier").prefetch_related("lignes"), pk=pk
+        )
         ctx = _document_context(invoice, list(invoice.lignes.all()))
         paiements = list(invoice.paiements.all())
         paye = sum((p.montant for p in paiements), Decimal("0"))

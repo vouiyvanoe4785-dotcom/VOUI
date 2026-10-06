@@ -39,24 +39,7 @@
     <div class="card-body p-4">
       <h6 class="section-title mb-3">Lignes de la facture</h6>
       <p class="text-muted small">Honoraires de transit, débours, droits et taxes, acconage, manutention...</p>
-      {{ formset.management_form }}
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead><tr><th>Type de frais</th><th>Désignation</th><th style="width:110px;">Quantité</th><th style="width:140px;">Prix unitaire</th><th style="width:60px;"></th></tr></thead>
-          <tbody>
-            {% for line_form in formset %}
-            <tr>
-              <td>{{ line_form.type_frais }}{{ line_form.id }}</td>
-              <td>{{ line_form.designation }}{% if line_form.errors %}<div class="text-danger small">{{ line_form.errors }}</div>{% endif %}</td>
-              <td>{{ line_form.quantite }}</td>
-              <td>{{ line_form.prix_unitaire }}</td>
-              <td class="text-center">{% if line_form.instance.pk %}{{ line_form.DELETE }}{% endif %}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% if formset.non_form_errors %}<div class="text-danger small">{{ formset.non_form_errors }}</div>{% endif %}
+      {% include "billing/_lines_formset.html" %}
     </div>
   </div>
 

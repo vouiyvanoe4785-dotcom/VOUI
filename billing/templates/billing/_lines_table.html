@@ -1,0 +1,29 @@
+{# Read-only lines table with HT / TVA / TTC totals, shared by quote and invoice detail pages. #}
+<div class="card mb-3">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Type de frais</th><th>Désignation</th><th>Quantité</th><th class="text-end">P.U. HT</th><th class="text-end">TVA</th><th class="text-end">Montant HT</th></tr></thead>
+      <tbody>
+        {% for line in doc.lignes.all %}
+        <tr>
+          <td>{{ line.get_type_frais_display }}</td>
+          <td>{{ line.designation }}</td>
+          <td>{{ line.quantite|floatformat:"-2" }}</td>
+          <td class="text-end">{{ line.prix_unitaire|floatformat:"2g" }}</td>
+          <td class="text-end">{{ line.taux_tva }} %</td>
+          <td class="text-end">{{ line.montant|floatformat:"2g" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-3">Aucune ligne.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><th colspan="5" class="text-end fw-normal">Total HT</th><th class="text-end">{{ doc.montant_ht|floatformat:"2g" }}</th></tr>
+        {% for row in doc.ventilation_tva %}{% if row.taux %}
+        <tr><td colspan="5" class="text-end text-muted">TVA {{ row.taux }} % sur {{ row.base|floatformat:"2g" }}</td><td class="text-end">{{ row.tva|floatformat:"2g" }}</td></tr>
+        {% endif %}{% endfor %}
+        <tr class="table-light"><th colspan="5" class="text-end">Total TTC</th><th class="text-end">{{ doc.montant_total|floatformat:"2g" }} MAD</th></tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
