@@ -10,6 +10,7 @@ from django.views import View
 from django.views.generic import DeleteView, DetailView, ListView
 
 from approvals.workflows import get_steps
+from core.document_forms import save_document_with_lines
 from core.pdf import pdf_response
 from dossiers.models import Dossier
 from partners.models import Partner
@@ -76,20 +77,11 @@ class QuoteEditView(LoginRequiredMixin, View):
     def post(self, request, pk=None):
         instance = self.get_instance(pk)
         form = QuoteForm(request.POST, instance=instance)
-        formset_instance = instance or Quote()
-        if form.is_valid():
-            quote = form.save(commit=False)
-            if not quote.created_by_id:
-                quote.created_by = request.user
-            quote.save()
-            formset = QuoteLineFormSet(request.POST, instance=quote)
-            if formset.is_valid():
-                formset.save()
-                _notifier_exoneration(request, quote)
-                messages.success(request, "Devis enregistré avec succès.")
-                return redirect("billing:quote_detail", pk=quote.pk)
-        else:
-            formset = QuoteLineFormSet(request.POST, instance=formset_instance)
+        quote, formset = save_document_with_lines(request, form, QuoteLineFormSet)
+        if quote is not None:
+            _notifier_exoneration(request, quote)
+            messages.success(request, "Devis enregistré avec succès.")
+            return redirect("billing:quote_detail", pk=quote.pk)
         return render(request, self.template_name, _form_context(form, formset, instance))
 
 
@@ -158,20 +150,11 @@ class InvoiceEditView(LoginRequiredMixin, View):
     def post(self, request, pk=None):
         instance = self.get_instance(pk)
         form = InvoiceForm(request.POST, instance=instance)
-        formset_instance = instance or Invoice()
-        if form.is_valid():
-            invoice = form.save(commit=False)
-            if not invoice.created_by_id:
-                invoice.created_by = request.user
-            invoice.save()
-            formset = InvoiceLineFormSet(request.POST, instance=invoice)
-            if formset.is_valid():
-                formset.save()
-                _notifier_exoneration(request, invoice)
-                messages.success(request, "Facture enregistrée avec succès.")
-                return redirect("billing:invoice_detail", pk=invoice.pk)
-        else:
-            formset = InvoiceLineFormSet(request.POST, instance=formset_instance)
+        invoice, formset = save_document_with_lines(request, form, InvoiceLineFormSet)
+        if invoice is not None:
+            _notifier_exoneration(request, invoice)
+            messages.success(request, "Facture enregistrée avec succès.")
+            return redirect("billing:invoice_detail", pk=invoice.pk)
         return render(request, self.template_name, _form_context(form, formset, instance))
 
 
