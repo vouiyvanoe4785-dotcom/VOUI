@@ -65,3 +65,11 @@ def mul(value, arg):
 @register.filter
 def can_delete_event(event, user):
     return event.can_delete(user)
+
+
+@register.simple_tag(takes_context=True)
+def page_url(context, page):
+    """Query string for another page that keeps the current filters (q, statut, type...)."""
+    params = context["request"].GET.copy()
+    params["page"] = page
+    return "?" + params.urlencode()
