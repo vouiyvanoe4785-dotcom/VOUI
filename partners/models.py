@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 
 class PartnerType(models.TextChoices):
@@ -36,6 +37,9 @@ class Partner(models.Model):
 
     def __str__(self):
         return self.raison_sociale
+
+    def get_absolute_url(self):
+        return reverse("partners:detail", kwargs={"pk": self.pk})
 
     def get_type_badge(self):
         return self.get_type_tiers_display()
